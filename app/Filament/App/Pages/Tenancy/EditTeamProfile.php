@@ -23,7 +23,7 @@ class EditTeamProfile extends EditTenantProfile
                     ->relationship('teamInvitations')
                     ->simple(
                         TextInput::make('email')
-                            ->unique('team_invitations', 'email', modifyRuleUsing: fn($rule) => $rule->where('team_id', $this->tenant->id))
+                            ->unique('team_invitations', 'email', modifyRuleUsing: fn ($rule) => $rule->where('team_id', $this->tenant->id))
                             ->email()
                             ->required(),
                     )
