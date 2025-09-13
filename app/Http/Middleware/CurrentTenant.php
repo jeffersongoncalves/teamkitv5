@@ -18,6 +18,7 @@ class CurrentTenant
     {
         if (auth('web')->check()) {
             $user = auth('web')->user();
+            /** @var \App\Models\Team $tenant */
             $tenant = Filament::getTenant();
             if ($tenant !== null) {
                 if ($user->current_team_id !== $tenant->id) {
