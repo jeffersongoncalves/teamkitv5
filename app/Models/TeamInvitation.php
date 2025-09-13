@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\TeamInvitationObserver;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,12 @@ class TeamInvitation extends Model
         'team_id',
         'email',
     ];
+
+    public function accept(Authenticatable $user): void
+    {
+        $this->team->users()->attach($user->getAuthIdentifier());
+        $this->delete();
+    }
 
     public function team(): BelongsTo
     {
