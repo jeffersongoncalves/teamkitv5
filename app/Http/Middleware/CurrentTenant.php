@@ -18,10 +18,12 @@ class CurrentTenant
     {
         if (auth('web')->check()) {
             $user = auth('web')->user();
-            /** @var \App\Models\Team $tenant */
+            /** @var \App\Models\Team|null $tenant */
             $tenant = Filament::getTenant();
-            if ($user->current_team_id !== $tenant?->id) {
-                $user->update(['current_team_id' => $tenant->id]);
+            if ($tenant?->id) {
+                if ($user->current_team_id !== $tenant->id) {
+                    $user->update(['current_team_id' => $tenant->id]);
+                }
             }
         }
 
