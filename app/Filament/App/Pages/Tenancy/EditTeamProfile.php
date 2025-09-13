@@ -28,8 +28,8 @@ class EditTeamProfile extends EditTenantProfile
                     ->relationship('teamInvitations')
                     ->simple(
                         TextInput::make('email')
-                            ->unique('team_invitations', 'email', modifyRuleUsing: fn($rule) => $rule->where('team_id', $this->tenant->id))
-                            ->rules([fn(): Closure => function (string $attribute, mixed $value, Closure $fail) {
+                            ->unique('team_invitations', 'email', modifyRuleUsing: fn ($rule) => $rule->where('team_id', $this->tenant->id))
+                            ->rules([fn (): Closure => function (string $attribute, mixed $value, Closure $fail) {
                                 if ($this->tenant->users()->where('email', $value)->exists()) {
                                     $fail('The email has already been taken.');
                                 }
