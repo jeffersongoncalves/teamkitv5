@@ -20,11 +20,9 @@ class CurrentTenant
             $user = auth('web')->user();
             /** @var \App\Models\Team $tenant */
             $tenant = Filament::getTenant();
-            if ($tenant !== null) {
-                if ($user->current_team_id !== $tenant->id) {
+            if ($tenant && $user->current_team_id !== $tenant->id) {
                     $user->update(['current_team_id' => $tenant->id]);
                 }
-            }
         }
 
         return $next($request);
