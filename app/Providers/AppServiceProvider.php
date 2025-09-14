@@ -197,7 +197,7 @@ class AppServiceProvider extends ServiceProvider
                 ->send();
         };
 
-        Pages\Page::$formActionsAreSticky = true;
+        Pages\Page::$formActionsAreSticky = false;
     }
 
     private function configureTables(): void
