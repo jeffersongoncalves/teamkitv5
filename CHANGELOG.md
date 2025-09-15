@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 4.0.15 - 2025-09-15
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv4/compare/4.0.13...4.0.15
+
 ## 4.0.13 - 2025-09-14
 
 **Full Changelog**: https://github.com/jeffersongoncalves/teamkitv4/compare/4.0.12...4.0.13
