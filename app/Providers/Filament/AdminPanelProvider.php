@@ -73,33 +73,7 @@ class AdminPanelProvider extends PanelProvider
                 __('Settings'),
             ])
             ->plugins([
-                FilamentLogViewer::make()
-                    ->navigationGroup(__('Settings')),
-                FilamentEditProfilePlugin::make()
-                    ->slug('profile')
-                    ->setTitle(__('My Profile'))
-                    ->setNavigationLabel(__('My Profile'))
-                    ->setNavigationGroup(__('Group Profile'))
-                    ->setIcon('heroicon-o-user')
-                    ->setSort(10)
-                    ->shouldRegisterNavigation(false)
-                    ->shouldShowEmailForm()
-                    ->shouldShowLocaleForm(options: [
-                        'pt_BR' => __('🇧🇷 Portuguese'),
-                        'en' => __('🇺🇸 English'),
-                        'es' => __('🇪🇸 Spanish'),
-                    ])
-                    ->shouldShowThemeColorForm()
-                    ->shouldShowSanctumTokens()
-                    ->shouldShowMultiFactorAuthentication()
-                    ->shouldShowBrowserSessionsForm()
-                    ->shouldShowAvatarForm(),
-            ])
-            ->userMenuItems([
-                'profile' => Action::make('profile')
-                    ->label(fn (): string => __('My Profile'))
-                    ->url(fn (): string => EditProfilePage::getUrl())
-                    ->icon('heroicon-m-user-circle'),
+                //
             ])
             ->unsavedChangesAlerts()
             ->passwordReset()

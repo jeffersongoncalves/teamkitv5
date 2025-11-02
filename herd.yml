@@ -1,4 +1,4 @@
-name: teamkitv4
+name: teamkitv5
 php: '8.4'
 secured: true
 aliases: {  }

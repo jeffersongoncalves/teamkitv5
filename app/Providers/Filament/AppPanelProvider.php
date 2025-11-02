@@ -73,32 +73,9 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
-                FilamentEditProfilePlugin::make()
-                    ->slug('my-profile')
-                    ->setTitle(__('My Profile'))
-                    ->setNavigationLabel(__('My Profile'))
-                    ->setNavigationGroup(__('Group Profile'))
-                    ->setIcon('heroicon-o-user')
-                    ->setSort(10)
-                    ->shouldRegisterNavigation(false)
-                    ->shouldShowEmailForm()
-                    ->shouldShowLocaleForm(options: [
-                        'pt_BR' => __('🇧🇷 Portuguese'),
-                        'en' => __('🇺🇸 English'),
-                        'es' => __('🇪🇸 Spanish'),
-                    ])
-                    ->shouldShowThemeColorForm()
-                    ->shouldShowSanctumTokens()
-                    ->shouldShowMultiFactorAuthentication()
-                    ->shouldShowBrowserSessionsForm()
-                    ->shouldShowAvatarForm(),
+                //
             ])
             ->userMenuItems([
-                'profile' => Action::make('profile')
-                    ->label(fn (): string => __('My Profile'))
-                    ->url(fn (): string => EditProfilePage::getUrl())
-                    ->icon('heroicon-m-user-circle')
-                    ->visible(fn () => Filament::getTenant() !== null),
                 'invitations' => Action::make('invitations')
                     ->label(fn (): string => __('Invitations'))
                     ->url(fn (): string => TeamInvitationAccept::getUrl())
