@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.0.0-beta4 - 2025-11-20
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv5/compare/5.0.0-beta3...5.0.0-beta4
+
 ## 5.0.0-beta3 - 2025-11-14
 
 ### What's Changed
