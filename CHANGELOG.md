@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.0.0-beta7 - 2025-12-09
+
+### What's Changed
+
+* build(deps-dev): bump vite from 7.2.6 to 7.2.7 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/16
+* build(deps): bump livewire/livewire from 4.0.0-beta.3 to 4.0.0-beta.4 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/17
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv5/compare/5.0.0-beta6...5.0.0-beta7
+
 ## 5.0.0-beta6 - 2025-12-05
 
 ### What's Changed
