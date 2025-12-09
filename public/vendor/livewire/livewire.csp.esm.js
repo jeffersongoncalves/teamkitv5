@@ -20,9 +20,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ../alpine/packages/csp/dist/module.cjs.js
+// node_modules/@alpinejs/csp/dist/module.cjs.js
 var require_module_cjs = __commonJS({
-  "../alpine/packages/csp/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/csp/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -2786,7 +2786,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         timeout = setTimeout(later, wait);
       };
     }
-    function throttle(func, limit) {
+    function throttle2(func, limit) {
       let inThrottle;
       return function() {
         let context = this, args = arguments;
@@ -2927,7 +2927,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       get raw() {
         return raw;
       },
-      version: "3.15.1",
+      version: "3.15.2",
       flushAndStopDeferringMutations,
       dontAutoEvaluateFunctions,
       disableEffectScheduling,
@@ -2961,7 +2961,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       mutateDom,
       directive: directive2,
       entangle,
-      throttle,
+      throttle: throttle2,
       debounce: debounce2,
       evaluate,
       initTree,
@@ -2982,6 +2982,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       bind: bind2
     };
     var alpine_default = Alpine24;
+    var safemap = /* @__PURE__ */ new WeakMap();
+    var globals = /* @__PURE__ */ new Set();
+    Object.getOwnPropertyNames(globalThis).forEach((key) => {
+      if (key === "styleMedia")
+        return;
+      globals.add(globalThis[key]);
+    });
     var Token = class {
       constructor(type, value, start22, end) {
         this.type = type;
@@ -3525,38 +3532,34 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       }
     };
     var Evaluator = class {
-      evaluate({ node, scope: scope2 = {}, context = null, allowGlobal = false, forceBindingRootScopeToFunctions = true }) {
+      evaluate({ node, scope: scope2 = {}, context = null, forceBindingRootScopeToFunctions = true }) {
         switch (node.type) {
           case "Literal":
             return node.value;
           case "Identifier":
             if (node.name in scope2) {
               const value2 = scope2[node.name];
+              this.checkForDangerousValues(value2);
               if (typeof value2 === "function") {
                 return value2.bind(scope2);
               }
               return value2;
             }
-            if (allowGlobal && typeof globalThis[node.name] !== "undefined") {
-              const value2 = globalThis[node.name];
-              if (typeof value2 === "function") {
-                return value2.bind(globalThis);
-              }
-              return value2;
-            }
             throw new Error(`Undefined variable: ${node.name}`);
           case "MemberExpression":
-            const object = this.evaluate({ node: node.object, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+            const object = this.evaluate({ node: node.object, scope: scope2, context, forceBindingRootScopeToFunctions });
             if (object == null) {
               throw new Error("Cannot read property of null or undefined");
             }
-            let memberValue;
+            let property;
             if (node.computed) {
-              const property = this.evaluate({ node: node.property, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-              memberValue = object[property];
+              property = this.evaluate({ node: node.property, scope: scope2, context, forceBindingRootScopeToFunctions });
             } else {
-              memberValue = object[node.property.name];
+              property = node.property.name;
             }
+            this.checkForDangerousKeywords(property);
+            let memberValue = object[property];
+            this.checkForDangerousValues(memberValue);
             if (typeof memberValue === "function") {
               if (forceBindingRootScopeToFunctions) {
                 return memberValue.bind(scope2);
@@ -3566,28 +3569,28 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             }
             return memberValue;
           case "CallExpression":
-            const args = node.arguments.map((arg) => this.evaluate({ node: arg, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions }));
+            const args = node.arguments.map((arg) => this.evaluate({ node: arg, scope: scope2, context, forceBindingRootScopeToFunctions }));
+            let returnValue;
             if (node.callee.type === "MemberExpression") {
-              const obj = this.evaluate({ node: node.callee.object, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-              let func;
+              const obj = this.evaluate({ node: node.callee.object, scope: scope2, context, forceBindingRootScopeToFunctions });
+              let prop;
               if (node.callee.computed) {
-                const prop = this.evaluate({ node: node.callee.property, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-                func = obj[prop];
+                prop = this.evaluate({ node: node.callee.property, scope: scope2, context, forceBindingRootScopeToFunctions });
               } else {
-                func = obj[node.callee.property.name];
+                prop = node.callee.property.name;
               }
+              this.checkForDangerousKeywords(prop);
+              let func = obj[prop];
               if (typeof func !== "function") {
                 throw new Error("Value is not a function");
               }
-              return func.apply(obj, args);
+              returnValue = func.apply(obj, args);
             } else {
               if (node.callee.type === "Identifier") {
                 const name = node.callee.name;
                 let func;
                 if (name in scope2) {
                   func = scope2[name];
-                } else if (allowGlobal && typeof globalThis[name] !== "undefined") {
-                  func = globalThis[name];
                 } else {
                   throw new Error(`Undefined variable: ${name}`);
                 }
@@ -3595,17 +3598,19 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
                   throw new Error("Value is not a function");
                 }
                 const thisContext = context !== null ? context : scope2;
-                return func.apply(thisContext, args);
+                returnValue = func.apply(thisContext, args);
               } else {
-                const callee = this.evaluate({ node: node.callee, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+                const callee = this.evaluate({ node: node.callee, scope: scope2, context, forceBindingRootScopeToFunctions });
                 if (typeof callee !== "function") {
                   throw new Error("Value is not a function");
                 }
-                return callee.apply(context, args);
+                returnValue = callee.apply(context, args);
               }
             }
+            this.checkForDangerousValues(returnValue);
+            return returnValue;
           case "UnaryExpression":
-            const argument = this.evaluate({ node: node.argument, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+            const argument = this.evaluate({ node: node.argument, scope: scope2, context, forceBindingRootScopeToFunctions });
             switch (node.operator) {
               case "!":
                 return !argument;
@@ -3630,8 +3635,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
               }
               return node.prefix ? scope2[name] : oldValue;
             } else if (node.argument.type === "MemberExpression") {
-              const obj = this.evaluate({ node: node.argument.object, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-              const prop = node.argument.computed ? this.evaluate({ node: node.argument.property, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions }) : node.argument.property.name;
+              const obj = this.evaluate({ node: node.argument.object, scope: scope2, context, forceBindingRootScopeToFunctions });
+              const prop = node.argument.computed ? this.evaluate({ node: node.argument.property, scope: scope2, context, forceBindingRootScopeToFunctions }) : node.argument.property.name;
               const oldValue = obj[prop];
               if (node.operator === "++") {
                 obj[prop] = oldValue + 1;
@@ -3642,8 +3647,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             }
             throw new Error("Invalid update expression target");
           case "BinaryExpression":
-            const left = this.evaluate({ node: node.left, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-            const right = this.evaluate({ node: node.right, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+            const left = this.evaluate({ node: node.left, scope: scope2, context, forceBindingRootScopeToFunctions });
+            const right = this.evaluate({ node: node.right, scope: scope2, context, forceBindingRootScopeToFunctions });
             switch (node.operator) {
               case "+":
                 return left + right;
@@ -3679,37 +3684,62 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
                 throw new Error(`Unknown binary operator: ${node.operator}`);
             }
           case "ConditionalExpression":
-            const test = this.evaluate({ node: node.test, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-            return test ? this.evaluate({ node: node.consequent, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions }) : this.evaluate({ node: node.alternate, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+            const test = this.evaluate({ node: node.test, scope: scope2, context, forceBindingRootScopeToFunctions });
+            return test ? this.evaluate({ node: node.consequent, scope: scope2, context, forceBindingRootScopeToFunctions }) : this.evaluate({ node: node.alternate, scope: scope2, context, forceBindingRootScopeToFunctions });
           case "AssignmentExpression":
-            const value = this.evaluate({ node: node.right, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+            const value = this.evaluate({ node: node.right, scope: scope2, context, forceBindingRootScopeToFunctions });
             if (node.left.type === "Identifier") {
               scope2[node.left.name] = value;
               return value;
             } else if (node.left.type === "MemberExpression") {
-              const obj = this.evaluate({ node: node.left.object, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-              if (node.left.computed) {
-                const prop = this.evaluate({ node: node.left.property, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-                obj[prop] = value;
-              } else {
-                obj[node.left.property.name] = value;
-              }
-              return value;
+              throw new Error("Property assignments are prohibited in the CSP build");
             }
             throw new Error("Invalid assignment target");
           case "ArrayExpression":
-            return node.elements.map((el) => this.evaluate({ node: el, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions }));
+            return node.elements.map((el) => this.evaluate({ node: el, scope: scope2, context, forceBindingRootScopeToFunctions }));
           case "ObjectExpression":
             const result = {};
             for (const prop of node.properties) {
-              const key = prop.computed ? this.evaluate({ node: prop.key, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions }) : prop.key.type === "Identifier" ? prop.key.name : this.evaluate({ node: prop.key, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
-              const value2 = this.evaluate({ node: prop.value, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+              const key = prop.computed ? this.evaluate({ node: prop.key, scope: scope2, context, forceBindingRootScopeToFunctions }) : prop.key.type === "Identifier" ? prop.key.name : this.evaluate({ node: prop.key, scope: scope2, context, forceBindingRootScopeToFunctions });
+              const value2 = this.evaluate({ node: prop.value, scope: scope2, context, forceBindingRootScopeToFunctions });
               result[key] = value2;
             }
             return result;
           default:
             throw new Error(`Unknown node type: ${node.type}`);
         }
+      }
+      checkForDangerousKeywords(keyword) {
+        let blacklist = [
+          "constructor",
+          "prototype",
+          "__proto__",
+          "__defineGetter__",
+          "__defineSetter__",
+          "insertAdjacentHTML"
+        ];
+        if (blacklist.includes(keyword)) {
+          throw new Error(`Accessing "${keyword}" is prohibited in the CSP build`);
+        }
+      }
+      checkForDangerousValues(prop) {
+        if (prop === null) {
+          return;
+        }
+        if (typeof prop !== "object" && typeof prop !== "function") {
+          return;
+        }
+        if (safemap.has(prop)) {
+          return;
+        }
+        if (prop instanceof HTMLIFrameElement || prop instanceof HTMLScriptElement) {
+          throw new Error("Accessing iframes and scripts is prohibited in the CSP build");
+        }
+        if (globals.has(prop)) {
+          throw new Error("Accessing global variables is prohibited in the CSP build");
+        }
+        safemap.set(prop, true);
+        return true;
       }
     };
     function generateRuntimeFunction(expression) {
@@ -3720,8 +3750,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         const ast = parser.parse();
         const evaluator = new Evaluator();
         return function(options = {}) {
-          const { scope: scope2 = {}, context = null, allowGlobal = false, forceBindingRootScopeToFunctions = false } = options;
-          return evaluator.evaluate({ node: ast, scope: scope2, context, allowGlobal, forceBindingRootScopeToFunctions });
+          const { scope: scope2 = {}, context = null, forceBindingRootScopeToFunctions = false } = options;
+          return evaluator.evaluate({ node: ast, scope: scope2, context, forceBindingRootScopeToFunctions });
         };
       } catch (error2) {
         throw new Error(`CSP Parser Error: ${error2.message}`);
@@ -3741,13 +3771,18 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return [overriddenMagics, ...closestDataStack(el)];
     }
     function generateEvaluator(el, expression, dataStack) {
+      if (el instanceof HTMLIFrameElement) {
+        throw new Error("Evaluating expressions on an iframe is prohibited in the CSP build");
+      }
+      if (el instanceof HTMLScriptElement) {
+        throw new Error("Evaluating expressions on a script is prohibited in the CSP build");
+      }
       return (receiver = () => {
       }, { scope: scope2 = {}, params = [] } = {}) => {
         let completeScope = mergeProxies([scope2, ...dataStack]);
         let evaluate2 = generateRuntimeFunction(expression);
         let returnValue = evaluate2({
           scope: completeScope,
-          allowGlobal: false,
           forceBindingRootScopeToFunctions: true
         });
         if (shouldAutoEvaluateFunctions && typeof returnValue === "function") {
@@ -3976,7 +4011,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       if (modifiers.includes("throttle")) {
         let nextModifier = modifiers[modifiers.indexOf("throttle") + 1] || "invalid-wait";
         let wait = isNumeric(nextModifier.split("ms")[0]) ? Number(nextModifier.split("ms")[0]) : 250;
-        handler4 = throttle(handler4, wait);
+        handler4 = throttle2(handler4, wait);
       }
       if (modifiers.includes("prevent"))
         handler4 = wrapHandler(handler4, (next, e) => {
@@ -4675,6 +4710,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     function warnMissingPluginDirective(name, directiveName, slug) {
       directive2(directiveName, (el) => warn(`You can't use [x-${directiveName}] without first installing the "${name}" plugin here: https://alpinejs.dev/plugins/${slug}`, el));
     }
+    directive2("html", (el, { expression }) => {
+      handleError(new Error("Using the x-html directive is prohibited in the CSP build"), el);
+    });
     alpine_default.setEvaluator(cspEvaluator);
     alpine_default.setReactivityEngine({ reactive: import_reactivity10.reactive, effect: import_reactivity10.effect, release: import_reactivity10.stop, raw: import_reactivity10.toRaw });
     var src_default2 = alpine_default;
@@ -4682,9 +4720,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 });
 
-// ../alpine/packages/collapse/dist/module.cjs.js
+// node_modules/@alpinejs/collapse/dist/module.cjs.js
 var require_module_cjs2 = __commonJS({
-  "../alpine/packages/collapse/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/collapse/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -4803,9 +4841,9 @@ var require_module_cjs2 = __commonJS({
   }
 });
 
-// ../alpine/packages/focus/dist/module.cjs.js
+// node_modules/@alpinejs/focus/dist/module.cjs.js
 var require_module_cjs3 = __commonJS({
-  "../alpine/packages/focus/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/focus/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -5816,9 +5854,9 @@ var require_module_cjs3 = __commonJS({
   }
 });
 
-// ../alpine/packages/intersect/dist/module.cjs.js
+// node_modules/@alpinejs/intersect/dist/module.cjs.js
 var require_module_cjs4 = __commonJS({
-  "../alpine/packages/intersect/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/intersect/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -5898,9 +5936,9 @@ var require_module_cjs4 = __commonJS({
   }
 });
 
-// ../alpine/packages/sort/dist/module.cjs.js
+// node_modules/@alpinejs/sort/dist/module.cjs.js
 var require_module_cjs5 = __commonJS({
-  "../alpine/packages/sort/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/sort/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -7042,9 +7080,9 @@ var require_module_cjs5 = __commonJS({
   }
 });
 
-// ../alpine/packages/resize/dist/module.cjs.js
+// node_modules/@alpinejs/resize/dist/module.cjs.js
 var require_module_cjs6 = __commonJS({
-  "../alpine/packages/resize/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/resize/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7114,9 +7152,9 @@ var require_module_cjs6 = __commonJS({
   }
 });
 
-// ../alpine/packages/anchor/dist/module.cjs.js
+// node_modules/@alpinejs/anchor/dist/module.cjs.js
 var require_module_cjs7 = __commonJS({
-  "../alpine/packages/anchor/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/anchor/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8655,9 +8693,9 @@ var require_nprogress = __commonJS({
   }
 });
 
-// ../alpine/packages/morph/dist/module.cjs.js
+// node_modules/@alpinejs/morph/dist/module.cjs.js
 var require_module_cjs8 = __commonJS({
-  "../alpine/packages/morph/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/morph/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9063,9 +9101,9 @@ var require_module_cjs8 = __commonJS({
   }
 });
 
-// ../alpine/packages/mask/dist/module.cjs.js
+// node_modules/@alpinejs/mask/dist/module.cjs.js
 var require_module_cjs9 = __commonJS({
-  "../alpine/packages/mask/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/mask/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -9420,6 +9458,9 @@ function getNonce() {
   }
   return null;
 }
+function getUriPrefix() {
+  return document.querySelector("[data-uri-prefix]")?.getAttribute("data-uri-prefix") ?? window.livewireScriptConfig["uriPrefix"] ?? null;
+}
 function getUpdateUri() {
   return document.querySelector("[data-update-uri]")?.getAttribute("data-update-uri") ?? window.livewireScriptConfig["uri"] ?? null;
 }
@@ -9483,8 +9524,7 @@ function handleFileUpload(el, property, component, cleanup) {
       return;
     start2();
     if (e.target.multiple) {
-      let append = ["ui-file-upload"].includes(e.target.tagName.toLowerCase());
-      manager.uploadMultiple(property, e.target.files, finish, error2, progress, cancel, append);
+      manager.uploadMultiple(property, e.target.files, finish, error2, progress, cancel);
     } else {
       manager.upload(property, e.target.files[0], finish, error2, progress, cancel);
     }
@@ -9540,7 +9580,7 @@ var UploadManager = class {
       append: false
     });
   }
-  uploadMultiple(name, files, finishCallback, errorCallback, progressCallback, cancelledCallback, append = false) {
+  uploadMultiple(name, files, finishCallback, errorCallback, progressCallback, cancelledCallback, append = true) {
     this.setUpload(name, {
       files: Array.from(files),
       multiple: true,
@@ -9705,7 +9745,7 @@ function uploadMultiple(component, name, files, finishCallback = () => {
 }, errorCallback = () => {
 }, progressCallback = () => {
 }, cancelledCallback = () => {
-}, append = false) {
+}, append = true) {
   let uploadManager = getUploadManager(component);
   uploadManager.uploadMultiple(
     name,
@@ -10503,6 +10543,8 @@ queueMicrotask(() => {
   coordinateNetworkInteractions(messageBus);
 });
 function fireAction(component, method, params = [], metadata = {}) {
+  if (component.__isWireProxy)
+    component = component.__instance;
   let action = constructAction(component, method, params, metadata);
   let prevented = false;
   actionInterceptors.forEach((callback) => {
@@ -11860,7 +11902,7 @@ var Directive = class {
 var import_collapse = __toESM(require_module_cjs2());
 var import_focus = __toESM(require_module_cjs3());
 
-// ../alpine/packages/persist/dist/module.esm.js
+// node_modules/@alpinejs/persist/dist/module.esm.js
 function src_default(Alpine24) {
   let persist = () => {
     let alias;
@@ -12165,7 +12207,7 @@ function isTeleportTarget(el) {
 function storeScrollInformationInHtmlBeforeNavigatingAway() {
   document.body.setAttribute("data-scroll-x", document.body.scrollLeft);
   document.body.setAttribute("data-scroll-y", document.body.scrollTop);
-  document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:scroll]"]).forEach((el) => {
+  document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:navigate\\:scroll]"]).forEach((el) => {
     el.setAttribute("data-scroll-x", el.scrollLeft);
     el.setAttribute("data-scroll-y", el.scrollTop);
   });
@@ -12187,7 +12229,7 @@ function restoreScrollPositionOrScrollToTop() {
   queueMicrotask(() => {
     queueMicrotask(() => {
       scroll(document.body);
-      document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:scroll]"]).forEach(scroll);
+      document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:navigate\\:scroll]"]).forEach(scroll);
     });
   });
 }
@@ -13066,6 +13108,8 @@ var import_alpinejs7 = __toESM(require_module_cjs());
 // js/evaluator.js
 var import_alpinejs6 = __toESM(require_module_cjs());
 function evaluateExpression(component, el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   options = {
     ...{
       scope: {
@@ -13080,6 +13124,8 @@ function evaluateExpression(component, el, expression, options = {}) {
   return import_alpinejs6.default.evaluate(el, expression, options);
 }
 function evaluateActionExpression(component, el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   let negated = false;
   if (expression.startsWith("!")) {
     negated = true;
@@ -13089,6 +13135,8 @@ function evaluateActionExpression(component, el, expression, options = {}) {
   return import_alpinejs6.default.evaluate(el, contextualExpression, options);
 }
 function evaluateActionExpressionWithoutComponentScope(el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   let negated = false;
   if (expression.startsWith("!")) {
     negated = true;
@@ -13611,7 +13659,7 @@ on("effect", ({ component, effects }) => {
 // js/features/supportStreaming.js
 interceptMessage(({ message, onStream }) => {
   onStream(({ streamedJson }) => {
-    let { id, type, name, el, ref, content, mode: mode2 } = streamedJson;
+    let { id, type, name, el, ref, content, mode } = streamedJson;
     if (type === "island")
       return;
     let component = findComponent(id);
@@ -13620,7 +13668,7 @@ interceptMessage(({ message, onStream }) => {
       replaceEl = component.el.querySelector(`[wire\\:stream.replace="${name}"]`);
       if (replaceEl) {
         targetEl = replaceEl;
-        mode2 = "replace";
+        mode = "replace";
       } else {
         targetEl = component.el.querySelector(`[wire\\:stream="${name}"]`);
       }
@@ -13631,7 +13679,7 @@ interceptMessage(({ message, onStream }) => {
     }
     if (!targetEl)
       return;
-    if (mode2 === "replace") {
+    if (mode === "replace") {
       targetEl.innerHTML = content;
     } else {
       targetEl.insertAdjacentHTML("beforeend", content);
@@ -13694,11 +13742,11 @@ interceptAction(({ action }) => {
   let isPrepend = directive2?.modifiers.includes("prepend");
   let isAppend = directive2?.modifiers.includes("append");
   if (islandName) {
-    let mode2 = isPrepend ? "prepend" : isAppend ? "append" : "morph";
+    let mode = isPrepend ? "prepend" : isAppend ? "append" : "morph";
     action.mergeMetadata({
       island: {
         name: islandName,
-        mode: mode2
+        mode
       }
     });
     return;
@@ -13749,7 +13797,7 @@ function renderIsland(component, islandHtml) {
   let strippedContent = extractInnerHtmlFromFragmentHtml(islandHtml);
   let parentElement = fragment.startMarkerNode.parentElement;
   let parentElementTag = parentElement ? parentElement.tagName.toLowerCase() : "div";
-  mode = incomingMetadata.mode || "morph";
+  let mode = incomingMetadata.mode || "morph";
   if (mode === "morph") {
     morphFragment(component, fragment.startMarkerNode, fragment.endMarkerNode, strippedContent);
   } else if (mode === "append") {
@@ -13899,13 +13947,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 function updateNavigateLinks() {
   let currentUrl = new URL(window.location.href);
+  let options = {
+    exact: true
+  };
   document.querySelectorAll(wireNavigateSelector).forEach((el) => {
+    if (el.hasAttribute("wire:current"))
+      return;
     let href = el.getAttribute("href");
     if (!href || href.startsWith("#"))
       return;
     try {
       let hrefUrl = new URL(href, window.location.href);
-      if (pathMatches(hrefUrl, currentUrl)) {
+      if (pathMatches(hrefUrl, currentUrl, options)) {
         el.setAttribute("data-current", "");
       } else {
         el.removeAttribute("data-current");
@@ -14014,7 +14067,7 @@ on("effect", ({ component, effects }) => {
   let scriptModuleHash = effects.scriptModule;
   if (scriptModuleHash) {
     let encodedName = component.name.replace(".", "--").replace("::", "---").replace(":", "----");
-    let path = `/livewire/js/${encodedName}.js?v=${scriptModuleHash}`;
+    let path = `${getUriPrefix()}/js/${encodedName}.js?v=${scriptModuleHash}`;
     import(path).then((module) => {
       module.run.call(component.$wire, component.$wire, component.$wire.js);
     });
@@ -14442,6 +14495,7 @@ directive("model", ({ el, directive: directive2, component, cleanup }) => {
   let isLazy = modifiers.includes("lazy") || modifiers.includes("change");
   let onBlur = modifiers.includes("blur");
   let isDebounced = modifiers.includes("debounce");
+  let isThrottled = modifiers.includes("throttle");
   let update = () => {
     setNextActionOrigin({ el, directive: directive2 });
     if (isLive || isDebounced) {
@@ -14449,7 +14503,13 @@ directive("model", ({ el, directive: directive2, component, cleanup }) => {
     }
     expression.startsWith("$parent") ? component.$wire.$parent.$commit() : component.$wire.$commit();
   };
-  let debouncedUpdate = isRealtimeInput(el) && !isDebounced && isLive ? debounce(update, 150) : update;
+  let debouncedUpdate = update;
+  if (isLive && isRealtimeInput(el) || isDebounced) {
+    debouncedUpdate = debounce(debouncedUpdate, parseModifierDuration(modifiers, "debounce") || 150);
+  }
+  if (isThrottled) {
+    debouncedUpdate = throttle(debouncedUpdate, parseModifierDuration(modifiers, "throttle") || 150);
+  }
   import_alpinejs19.default.bind(el, {
     ["@change"]() {
       isLazy && update();
@@ -14475,6 +14535,16 @@ function getModifierTail(modifiers) {
     "lazy",
     "defer"
   ].includes(i));
+  if (modifiers.includes("debounce")) {
+    let index = modifiers.indexOf("debounce");
+    let hasDuration = parseModifierDuration(modifiers, "debounce") !== void 0;
+    modifiers.splice(index, hasDuration ? 2 : 1);
+  }
+  if (modifiers.includes("throttle")) {
+    let index = modifiers.indexOf("throttle");
+    let hasDuration = parseModifierDuration(modifiers, "throttle") !== void 0;
+    modifiers.splice(index, hasDuration ? 2 : 1);
+  }
   if (modifiers.length === 0)
     return "";
   return "." + modifiers.join(".");
@@ -14503,6 +14573,25 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
+}
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    let context = this, args = arguments;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+function parseModifierDuration(modifiers, key) {
+  let index = modifiers.indexOf(key);
+  if (index === -1)
+    return void 0;
+  let nextModifier = modifiers[modifiers.indexOf(key) + 1] || "invalid-wait";
+  let duration = nextModifier.split("ms")[0];
+  return !isNaN(duration) ? duration : void 0;
 }
 
 // js/directives/wire-init.js

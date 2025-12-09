@@ -20,9 +20,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ../alpine/packages/alpinejs/dist/module.cjs.js
+// node_modules/alpinejs/dist/module.cjs.js
 var require_module_cjs = __commonJS({
-  "../alpine/packages/alpinejs/dist/module.cjs.js"(exports, module) {
+  "node_modules/alpinejs/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -2786,7 +2786,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         timeout = setTimeout(later, wait);
       };
     }
-    function throttle(func, limit) {
+    function throttle2(func, limit) {
       let inThrottle;
       return function() {
         let context = this, args = arguments;
@@ -2927,7 +2927,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       get raw() {
         return raw;
       },
-      version: "3.15.1",
+      version: "3.15.2",
       flushAndStopDeferringMutations,
       dontAutoEvaluateFunctions,
       disableEffectScheduling,
@@ -2961,7 +2961,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       mutateDom,
       directive: directive2,
       entangle,
-      throttle,
+      throttle: throttle2,
       debounce: debounce2,
       evaluate,
       initTree,
@@ -3194,7 +3194,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       if (modifiers.includes("throttle")) {
         let nextModifier = modifiers[modifiers.indexOf("throttle") + 1] || "invalid-wait";
         let wait = isNumeric(nextModifier.split("ms")[0]) ? Number(nextModifier.split("ms")[0]) : 250;
-        handler4 = throttle(handler4, wait);
+        handler4 = throttle2(handler4, wait);
       }
       if (modifiers.includes("prevent"))
         handler4 = wrapHandler(handler4, (next, e) => {
@@ -3900,9 +3900,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 });
 
-// ../alpine/packages/collapse/dist/module.cjs.js
+// node_modules/@alpinejs/collapse/dist/module.cjs.js
 var require_module_cjs2 = __commonJS({
-  "../alpine/packages/collapse/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/collapse/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -4021,9 +4021,9 @@ var require_module_cjs2 = __commonJS({
   }
 });
 
-// ../alpine/packages/focus/dist/module.cjs.js
+// node_modules/@alpinejs/focus/dist/module.cjs.js
 var require_module_cjs3 = __commonJS({
-  "../alpine/packages/focus/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/focus/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -5034,9 +5034,9 @@ var require_module_cjs3 = __commonJS({
   }
 });
 
-// ../alpine/packages/intersect/dist/module.cjs.js
+// node_modules/@alpinejs/intersect/dist/module.cjs.js
 var require_module_cjs4 = __commonJS({
-  "../alpine/packages/intersect/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/intersect/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -5116,9 +5116,9 @@ var require_module_cjs4 = __commonJS({
   }
 });
 
-// ../alpine/packages/sort/dist/module.cjs.js
+// node_modules/@alpinejs/sort/dist/module.cjs.js
 var require_module_cjs5 = __commonJS({
-  "../alpine/packages/sort/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/sort/dist/module.cjs.js"(exports, module) {
     var __create2 = Object.create;
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
@@ -6260,9 +6260,9 @@ var require_module_cjs5 = __commonJS({
   }
 });
 
-// ../alpine/packages/resize/dist/module.cjs.js
+// node_modules/@alpinejs/resize/dist/module.cjs.js
 var require_module_cjs6 = __commonJS({
-  "../alpine/packages/resize/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/resize/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -6332,9 +6332,9 @@ var require_module_cjs6 = __commonJS({
   }
 });
 
-// ../alpine/packages/anchor/dist/module.cjs.js
+// node_modules/@alpinejs/anchor/dist/module.cjs.js
 var require_module_cjs7 = __commonJS({
-  "../alpine/packages/anchor/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/anchor/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -7873,9 +7873,9 @@ var require_nprogress = __commonJS({
   }
 });
 
-// ../alpine/packages/morph/dist/module.cjs.js
+// node_modules/@alpinejs/morph/dist/module.cjs.js
 var require_module_cjs8 = __commonJS({
-  "../alpine/packages/morph/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/morph/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8281,9 +8281,9 @@ var require_module_cjs8 = __commonJS({
   }
 });
 
-// ../alpine/packages/mask/dist/module.cjs.js
+// node_modules/@alpinejs/mask/dist/module.cjs.js
 var require_module_cjs9 = __commonJS({
-  "../alpine/packages/mask/dist/module.cjs.js"(exports, module) {
+  "node_modules/@alpinejs/mask/dist/module.cjs.js"(exports, module) {
     var __defProp2 = Object.defineProperty;
     var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
     var __getOwnPropNames2 = Object.getOwnPropertyNames;
@@ -8638,6 +8638,9 @@ function getNonce() {
   }
   return null;
 }
+function getUriPrefix() {
+  return document.querySelector("[data-uri-prefix]")?.getAttribute("data-uri-prefix") ?? window.livewireScriptConfig["uriPrefix"] ?? null;
+}
 function getUpdateUri() {
   return document.querySelector("[data-update-uri]")?.getAttribute("data-update-uri") ?? window.livewireScriptConfig["uri"] ?? null;
 }
@@ -8701,8 +8704,7 @@ function handleFileUpload(el, property, component, cleanup) {
       return;
     start2();
     if (e.target.multiple) {
-      let append = ["ui-file-upload"].includes(e.target.tagName.toLowerCase());
-      manager.uploadMultiple(property, e.target.files, finish, error2, progress, cancel, append);
+      manager.uploadMultiple(property, e.target.files, finish, error2, progress, cancel);
     } else {
       manager.upload(property, e.target.files[0], finish, error2, progress, cancel);
     }
@@ -8758,7 +8760,7 @@ var UploadManager = class {
       append: false
     });
   }
-  uploadMultiple(name, files, finishCallback, errorCallback, progressCallback, cancelledCallback, append = false) {
+  uploadMultiple(name, files, finishCallback, errorCallback, progressCallback, cancelledCallback, append = true) {
     this.setUpload(name, {
       files: Array.from(files),
       multiple: true,
@@ -8923,7 +8925,7 @@ function uploadMultiple(component, name, files, finishCallback = () => {
 }, errorCallback = () => {
 }, progressCallback = () => {
 }, cancelledCallback = () => {
-}, append = false) {
+}, append = true) {
   let uploadManager = getUploadManager(component);
   uploadManager.uploadMultiple(
     name,
@@ -9721,6 +9723,8 @@ queueMicrotask(() => {
   coordinateNetworkInteractions(messageBus);
 });
 function fireAction(component, method, params = [], metadata = {}) {
+  if (component.__isWireProxy)
+    component = component.__instance;
   let action = constructAction(component, method, params, metadata);
   let prevented = false;
   actionInterceptors.forEach((callback) => {
@@ -11078,7 +11082,7 @@ var Directive = class {
 var import_collapse = __toESM(require_module_cjs2());
 var import_focus = __toESM(require_module_cjs3());
 
-// ../alpine/packages/persist/dist/module.esm.js
+// node_modules/@alpinejs/persist/dist/module.esm.js
 function src_default(Alpine24) {
   let persist = () => {
     let alias;
@@ -11383,7 +11387,7 @@ function isTeleportTarget(el) {
 function storeScrollInformationInHtmlBeforeNavigatingAway() {
   document.body.setAttribute("data-scroll-x", document.body.scrollLeft);
   document.body.setAttribute("data-scroll-y", document.body.scrollTop);
-  document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:scroll]"]).forEach((el) => {
+  document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:navigate\\:scroll]"]).forEach((el) => {
     el.setAttribute("data-scroll-x", el.scrollLeft);
     el.setAttribute("data-scroll-y", el.scrollTop);
   });
@@ -11405,7 +11409,7 @@ function restoreScrollPositionOrScrollToTop() {
   queueMicrotask(() => {
     queueMicrotask(() => {
       scroll(document.body);
-      document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:scroll]"]).forEach(scroll);
+      document.querySelectorAll(["[x-navigate\\:scroll]", "[wire\\:navigate\\:scroll]"]).forEach(scroll);
     });
   });
 }
@@ -12284,6 +12288,8 @@ var import_alpinejs7 = __toESM(require_module_cjs());
 // js/evaluator.js
 var import_alpinejs6 = __toESM(require_module_cjs());
 function evaluateExpression(component, el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   options = {
     ...{
       scope: {
@@ -12298,6 +12304,8 @@ function evaluateExpression(component, el, expression, options = {}) {
   return import_alpinejs6.default.evaluate(el, expression, options);
 }
 function evaluateActionExpression(component, el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   let negated = false;
   if (expression.startsWith("!")) {
     negated = true;
@@ -12307,6 +12315,8 @@ function evaluateActionExpression(component, el, expression, options = {}) {
   return import_alpinejs6.default.evaluate(el, contextualExpression, options);
 }
 function evaluateActionExpressionWithoutComponentScope(el, expression, options = {}) {
+  if (!expression || expression.trim() === "")
+    return;
   let negated = false;
   if (expression.startsWith("!")) {
     negated = true;
@@ -12829,7 +12839,7 @@ on("effect", ({ component, effects }) => {
 // js/features/supportStreaming.js
 interceptMessage(({ message, onStream }) => {
   onStream(({ streamedJson }) => {
-    let { id, type, name, el, ref, content, mode: mode2 } = streamedJson;
+    let { id, type, name, el, ref, content, mode } = streamedJson;
     if (type === "island")
       return;
     let component = findComponent(id);
@@ -12838,7 +12848,7 @@ interceptMessage(({ message, onStream }) => {
       replaceEl = component.el.querySelector(`[wire\\:stream.replace="${name}"]`);
       if (replaceEl) {
         targetEl = replaceEl;
-        mode2 = "replace";
+        mode = "replace";
       } else {
         targetEl = component.el.querySelector(`[wire\\:stream="${name}"]`);
       }
@@ -12849,7 +12859,7 @@ interceptMessage(({ message, onStream }) => {
     }
     if (!targetEl)
       return;
-    if (mode2 === "replace") {
+    if (mode === "replace") {
       targetEl.innerHTML = content;
     } else {
       targetEl.insertAdjacentHTML("beforeend", content);
@@ -12912,11 +12922,11 @@ interceptAction(({ action }) => {
   let isPrepend = directive2?.modifiers.includes("prepend");
   let isAppend = directive2?.modifiers.includes("append");
   if (islandName) {
-    let mode2 = isPrepend ? "prepend" : isAppend ? "append" : "morph";
+    let mode = isPrepend ? "prepend" : isAppend ? "append" : "morph";
     action.mergeMetadata({
       island: {
         name: islandName,
-        mode: mode2
+        mode
       }
     });
     return;
@@ -12967,7 +12977,7 @@ function renderIsland(component, islandHtml) {
   let strippedContent = extractInnerHtmlFromFragmentHtml(islandHtml);
   let parentElement = fragment.startMarkerNode.parentElement;
   let parentElementTag = parentElement ? parentElement.tagName.toLowerCase() : "div";
-  mode = incomingMetadata.mode || "morph";
+  let mode = incomingMetadata.mode || "morph";
   if (mode === "morph") {
     morphFragment(component, fragment.startMarkerNode, fragment.endMarkerNode, strippedContent);
   } else if (mode === "append") {
@@ -13117,13 +13127,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 function updateNavigateLinks() {
   let currentUrl = new URL(window.location.href);
+  let options = {
+    exact: true
+  };
   document.querySelectorAll(wireNavigateSelector).forEach((el) => {
+    if (el.hasAttribute("wire:current"))
+      return;
     let href = el.getAttribute("href");
     if (!href || href.startsWith("#"))
       return;
     try {
       let hrefUrl = new URL(href, window.location.href);
-      if (pathMatches(hrefUrl, currentUrl)) {
+      if (pathMatches(hrefUrl, currentUrl, options)) {
         el.setAttribute("data-current", "");
       } else {
         el.removeAttribute("data-current");
@@ -13232,7 +13247,7 @@ on("effect", ({ component, effects }) => {
   let scriptModuleHash = effects.scriptModule;
   if (scriptModuleHash) {
     let encodedName = component.name.replace(".", "--").replace("::", "---").replace(":", "----");
-    let path = `/livewire/js/${encodedName}.js?v=${scriptModuleHash}`;
+    let path = `${getUriPrefix()}/js/${encodedName}.js?v=${scriptModuleHash}`;
     import(path).then((module) => {
       module.run.call(component.$wire, component.$wire, component.$wire.js);
     });
@@ -13660,6 +13675,7 @@ directive("model", ({ el, directive: directive2, component, cleanup }) => {
   let isLazy = modifiers.includes("lazy") || modifiers.includes("change");
   let onBlur = modifiers.includes("blur");
   let isDebounced = modifiers.includes("debounce");
+  let isThrottled = modifiers.includes("throttle");
   let update = () => {
     setNextActionOrigin({ el, directive: directive2 });
     if (isLive || isDebounced) {
@@ -13667,7 +13683,13 @@ directive("model", ({ el, directive: directive2, component, cleanup }) => {
     }
     expression.startsWith("$parent") ? component.$wire.$parent.$commit() : component.$wire.$commit();
   };
-  let debouncedUpdate = isRealtimeInput(el) && !isDebounced && isLive ? debounce(update, 150) : update;
+  let debouncedUpdate = update;
+  if (isLive && isRealtimeInput(el) || isDebounced) {
+    debouncedUpdate = debounce(debouncedUpdate, parseModifierDuration(modifiers, "debounce") || 150);
+  }
+  if (isThrottled) {
+    debouncedUpdate = throttle(debouncedUpdate, parseModifierDuration(modifiers, "throttle") || 150);
+  }
   import_alpinejs19.default.bind(el, {
     ["@change"]() {
       isLazy && update();
@@ -13693,6 +13715,16 @@ function getModifierTail(modifiers) {
     "lazy",
     "defer"
   ].includes(i));
+  if (modifiers.includes("debounce")) {
+    let index = modifiers.indexOf("debounce");
+    let hasDuration = parseModifierDuration(modifiers, "debounce") !== void 0;
+    modifiers.splice(index, hasDuration ? 2 : 1);
+  }
+  if (modifiers.includes("throttle")) {
+    let index = modifiers.indexOf("throttle");
+    let hasDuration = parseModifierDuration(modifiers, "throttle") !== void 0;
+    modifiers.splice(index, hasDuration ? 2 : 1);
+  }
   if (modifiers.length === 0)
     return "";
   return "." + modifiers.join(".");
@@ -13721,6 +13753,25 @@ function debounce(func, wait) {
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
   };
+}
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    let context = this, args = arguments;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+function parseModifierDuration(modifiers, key) {
+  let index = modifiers.indexOf(key);
+  if (index === -1)
+    return void 0;
+  let nextModifier = modifiers[modifiers.indexOf(key) + 1] || "invalid-wait";
+  let duration = nextModifier.split("ms")[0];
+  return !isNaN(duration) ? duration : void 0;
 }
 
 // js/directives/wire-init.js
