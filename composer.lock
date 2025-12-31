@@ -12260,6 +12260,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "filament/filament": 10,
         "livewire/livewire": 10
     },
     "prefer-stable": true,
@@ -12272,5 +12273,5 @@
         "ext-pcntl": "7.1",
         "ext-posix": "7.1"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
