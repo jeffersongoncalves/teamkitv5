@@ -3289,16 +3289,16 @@
         },
         {
             "name": "livewire/livewire",
-            "version": "v4.0.0-beta.5",
+            "version": "v4.0.0-beta.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/livewire/livewire.git",
-                "reference": "f868b14968caafbdd50f219698544315347d8a73"
+                "reference": "c7c195c96acf45c449bf33118be6e4edabbd86f7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/livewire/livewire/zipball/f868b14968caafbdd50f219698544315347d8a73",
-                "reference": "f868b14968caafbdd50f219698544315347d8a73",
+                "url": "https://api.github.com/repos/livewire/livewire/zipball/c7c195c96acf45c449bf33118be6e4edabbd86f7",
+                "reference": "c7c195c96acf45c449bf33118be6e4edabbd86f7",
                 "shasum": ""
             },
             "require": {
@@ -3353,7 +3353,7 @@
             "description": "A front-end framework for Laravel.",
             "support": {
                 "issues": "https://github.com/livewire/livewire/issues",
-                "source": "https://github.com/livewire/livewire/tree/v4.0.0-beta.5"
+                "source": "https://github.com/livewire/livewire/tree/v4.0.0-beta.6"
             },
             "funding": [
                 {
@@ -3361,7 +3361,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-12-17T02:05:33+00:00"
+            "time": "2026-01-08T16:45:48+00:00"
         },
         {
             "name": "masterminds/html5",
@@ -12200,12 +12200,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozarts/assert.git",
-                "reference": "b01be90dceff69c88c7b36c30ee45c9fd9107f7f"
+                "reference": "bdbabc199a7ba9965484e4725d66170e5711323b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozarts/assert/zipball/b01be90dceff69c88c7b36c30ee45c9fd9107f7f",
-                "reference": "b01be90dceff69c88c7b36c30ee45c9fd9107f7f",
+                "url": "https://api.github.com/repos/webmozarts/assert/zipball/bdbabc199a7ba9965484e4725d66170e5711323b",
+                "reference": "bdbabc199a7ba9965484e4725d66170e5711323b",
                 "shasum": ""
             },
             "require": {
@@ -12254,14 +12254,13 @@
                 "issues": "https://github.com/webmozarts/assert/issues",
                 "source": "https://github.com/webmozarts/assert/tree/2.1.1"
             },
-            "time": "2026-01-07T17:26:38+00:00"
+            "time": "2026-01-08T11:28:40+00:00"
         }
     ],
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "filament/filament": 10,
-        "livewire/livewire": 10
+        "filament/filament": 10
     },
     "prefer-stable": true,
     "prefer-lowest": false,
