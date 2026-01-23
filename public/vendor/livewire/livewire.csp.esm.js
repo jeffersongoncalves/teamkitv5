@@ -10414,6 +10414,8 @@ var Message = class {
   calls = null;
   payload = null;
   responsePayload = null;
+  pendingReturns = [];
+  pendingReturnsMeta = {};
   interceptors = [];
   cancelled = false;
   request = null;
@@ -10542,10 +10544,8 @@ var Message = class {
         onRender: (callback) => interceptor.onRender = callback
       });
     });
-    let returns = this.responsePayload.effects["returns"] || [];
-    let returnsMeta = this.responsePayload.effects["returnsMeta"] || {};
-    this.resolveActionPromises(returns, returnsMeta);
-    this.invokeOnFinish();
+    this.pendingReturns = this.responsePayload.effects["returns"] || [];
+    this.pendingReturnsMeta = this.responsePayload.effects["returnsMeta"] || {};
   }
   invokeOnSync() {
     this.interceptors.forEach((interceptor) => interceptor.onSync());
@@ -10554,9 +10554,9 @@ var Message = class {
     this.interceptors.forEach((interceptor) => interceptor.onEffect());
   }
   async invokeOnMorph() {
-    this.interceptors.forEach(async (interceptor) => {
-      await interceptor.onMorph();
-    });
+    await Promise.all(
+      this.interceptors.map((interceptor) => interceptor.onMorph())
+    );
   }
   invokeOnRender() {
     this.interceptors.forEach((interceptor) => interceptor.onRender());
@@ -10652,7 +10652,13 @@ var Action = class {
     let name = this.name;
     let params = JSON.stringify(this.params);
     let metadata = JSON.stringify(this.metadata);
-    return window.btoa(String.fromCharCode(...new TextEncoder().encode(componentId + name + params + metadata)));
+    let bytes = new TextEncoder().encode(componentId + name + params + metadata);
+    let binary = "";
+    let chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return window.btoa(binary);
   }
   isAsync() {
     let asyncMethods = this.component.snapshot.memo?.async || [];
@@ -11008,9 +11014,12 @@ function sendMessages() {
         };
       }
     });
+    let cachedOptions = null;
     Object.defineProperty(request, "options", {
       get() {
-        return {
+        if (cachedOptions)
+          return cachedOptions;
+        cachedOptions = {
           method: "POST",
           body: JSON.stringify(request.payload),
           headers: {
@@ -11019,6 +11028,7 @@ function sendMessages() {
           },
           signal: request.controller.signal
         };
+        return cachedOptions;
       }
     });
   });
@@ -11071,6 +11081,7 @@ function sendMessages() {
           confirm(
             "This page has expired.\nWould you like to refresh the page?"
           ) && window.location.reload();
+          return;
         }
         if (response.aborted)
           return;
@@ -11117,7 +11128,14 @@ function sendMessages() {
                 if (message.isCancelled())
                   return;
                 message.invokeOnMorph().finally(() => {
-                  setTimeout(() => {
+                  if (!message.isCancelled()) {
+                    message.resolveActionPromises(
+                      message.pendingReturns,
+                      message.pendingReturnsMeta
+                    );
+                    message.invokeOnFinish();
+                  }
+                  requestAnimationFrame(() => {
                     if (message.isCancelled())
                       return;
                     message.invokeOnRender();
@@ -11587,7 +11605,10 @@ on("effect", ({ component, effects }) => {
       loading: true,
       afterLoaded: []
     }));
-    import(path).then((module) => {
+    import(
+      /* @vite-ignore */
+      path
+    ).then((module) => {
       module.run.call(component.$wire, component.$wire, component.$wire.js);
       pendingComponentAssets.get(component).loading = false;
       pendingComponentAssets.get(component).afterLoaded.forEach((callback) => callback());
@@ -14715,7 +14736,7 @@ on("directive.init", ({ el, directive: directive2, cleanup, component }) => {
           let expression = directive2.expression;
           if (livewireOptions?.defaultParams !== void 0 && !expression.includes("(")) {
             let params = Array.isArray(livewireOptions.defaultParams) ? livewireOptions.defaultParams : [livewireOptions.defaultParams];
-            expression = `${expression}(${params.map((p) => JSON.stringify(p)).join(", ")})`;
+            expression = expression + "(" + params.map((p) => JSON.stringify(p)).join(", ") + ")";
           }
           evaluateActionExpression(el, expression, { scope: { $event: e } });
         });
@@ -14835,7 +14856,7 @@ function applyDelay(directive2) {
   ];
 }
 function whenTargetsArePartOfRequest(component, el, targets, inverted, [startLoading, endLoading]) {
-  return interceptMessage(({ message, onSend, onFinish }) => {
+  return interceptMessage(({ message, onSend, onSuccess, onFinish }) => {
     if (component !== message.component)
       return;
     let island = closestIsland(el);
@@ -14846,14 +14867,26 @@ function whenTargetsArePartOfRequest(component, el, targets, inverted, [startLoa
       return;
     }
     let matches = true;
+    let cleared = false;
     onSend(({ payload }) => {
       if (targets.length > 0 && containsTargets(payload, targets) === inverted) {
         matches = false;
       }
       matches && startLoading();
     });
+    onSuccess(({ onEffect }) => {
+      onEffect(() => {
+        if (matches && !cleared) {
+          endLoading();
+          cleared = true;
+        }
+      });
+    });
     onFinish(() => {
-      matches && endLoading();
+      if (matches && !cleared) {
+        endLoading();
+        cleared = true;
+      }
     });
   });
 }
