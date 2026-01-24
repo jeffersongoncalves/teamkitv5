@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use AchyutN\FilamentLogViewer\FilamentLogViewer;
 use App\Filament\Admin\Pages\Auth\Login;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
@@ -72,6 +73,8 @@ class AdminPanelProvider extends PanelProvider
                 __('Settings'),
             ])
             ->plugins([
+                FilamentLogViewer::make()
+                    ->navigationGroup(__('Settings')),
                 FilamentEditProfilePlugin::make()
                     ->slug('profile')
                     ->setTitle(__('My Profile'))
