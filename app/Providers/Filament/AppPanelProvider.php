@@ -28,6 +28,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 
 class AppPanelProvider extends PanelProvider
 {
@@ -71,9 +73,31 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
-                //
+                FilamentEditProfilePlugin::make()
+                    ->slug('profile')
+                    ->setTitle(__('My Profile'))
+                    ->setNavigationLabel(__('My Profile'))
+                    ->setNavigationGroup(__('Group Profile'))
+                    ->setIcon('heroicon-o-user')
+                    ->setSort(10)
+                    ->shouldRegisterNavigation(false)
+                    ->shouldShowEmailForm()
+                    ->shouldShowLocaleForm(options: [
+                        'pt_BR' => __('🇧🇷 Portuguese'),
+                        'en' => __('🇺🇸 English'),
+                        'es' => __('🇪🇸 Spanish'),
+                    ])
+                    ->shouldShowThemeColorForm()
+                    ->shouldShowSanctumTokens()
+                    ->shouldShowMultiFactorAuthentication()
+                    ->shouldShowBrowserSessionsForm()
+                    ->shouldShowAvatarForm(),
             ])
             ->userMenuItems([
+                'profile' => Action::make('profile')
+                    ->label(fn (): string => __('My Profile'))
+                    ->url(fn (): string => EditProfilePage::getUrl())
+                    ->icon('heroicon-m-user-circle'),
                 'invitations' => Action::make('invitations')
                     ->label(fn (): string => __('Invitations'))
                     ->url(fn (): string => TeamInvitationAccept::getUrl())
