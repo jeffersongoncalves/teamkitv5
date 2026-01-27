@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.1.1 - 2026-01-27
+
+### What's Changed
+
+* build(deps-dev): bump barryvdh/laravel-debugbar from 3.16.3 to 4.0.0 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/43
+* Integrate filament-edit-profile plugin for user profiles by @jeffersongoncalves in https://github.com/jeffersongoncalves/teamkitv5/pull/44
+* Integrate filament-log-viewer plugin for enhanced log management by @jeffersongoncalves in https://github.com/jeffersongoncalves/teamkitv5/pull/45
+* build(deps-dev): bump barryvdh/laravel-debugbar from 4.0.0 to 4.0.3 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/47
+* build(deps-dev): bump axios from 1.13.2 to 1.13.3 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/46
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv5/compare/5.1.0...5.1.1
+
 ## 5.1.0 - 2026-01-23
 
 ### What's Changed
