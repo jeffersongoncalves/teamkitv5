@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "achyutn/filament-log-viewer",
-            "version": "v2.1.0",
+            "version": "v2.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/achyutkneupane/filament-log-viewer.git",
-                "reference": "557a2c7c7c2590786ccfb8a8cc63e5c80a0bbc96"
+                "reference": "baf87efffe91fb0d70c537e85bede68dcc49f522"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/achyutkneupane/filament-log-viewer/zipball/557a2c7c7c2590786ccfb8a8cc63e5c80a0bbc96",
-                "reference": "557a2c7c7c2590786ccfb8a8cc63e5c80a0bbc96",
+                "url": "https://api.github.com/repos/achyutkneupane/filament-log-viewer/zipball/baf87efffe91fb0d70c537e85bede68dcc49f522",
+                "reference": "baf87efffe91fb0d70c537e85bede68dcc49f522",
                 "shasum": ""
             },
             "require": {
@@ -70,7 +70,7 @@
             ],
             "support": {
                 "issues": "https://github.com/achyutkneupane/filament-log-viewer/issues",
-                "source": "https://github.com/achyutkneupane/filament-log-viewer/tree/v2.1.0"
+                "source": "https://github.com/achyutkneupane/filament-log-viewer/tree/v2.2.0"
             },
             "funding": [
                 {
@@ -90,7 +90,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-01-17T11:51:26+00:00"
+            "time": "2026-01-30T17:43:23+00:00"
         },
         {
             "name": "anourvalar/eloquent-serialize",
@@ -310,16 +310,16 @@
         },
         {
             "name": "brick/math",
-            "version": "0.14.1",
+            "version": "0.14.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/math.git",
-                "reference": "f05858549e5f9d7bb45875a75583240a38a281d0"
+                "reference": "55c950aa71a2cabc1d8f2bec1f8a7020bd244aa2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/math/zipball/f05858549e5f9d7bb45875a75583240a38a281d0",
-                "reference": "f05858549e5f9d7bb45875a75583240a38a281d0",
+                "url": "https://api.github.com/repos/brick/math/zipball/55c950aa71a2cabc1d8f2bec1f8a7020bd244aa2",
+                "reference": "55c950aa71a2cabc1d8f2bec1f8a7020bd244aa2",
                 "shasum": ""
             },
             "require": {
@@ -358,7 +358,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/math/issues",
-                "source": "https://github.com/brick/math/tree/0.14.1"
+                "source": "https://github.com/brick/math/tree/0.14.2"
             },
             "funding": [
                 {
@@ -366,7 +366,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-11-24T14:40:29+00:00"
+            "time": "2026-01-30T14:03:11+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
