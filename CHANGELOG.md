@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.1.3 - 2026-01-30
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv5/compare/5.1.2...5.1.3
+
 ## 5.1.2 - 2026-01-30
 
 ### What's Changed
