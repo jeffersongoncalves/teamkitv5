@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.1.2 - 2026-01-30
+
+### What's Changed
+
+* build(deps-dev): bump axios from 1.13.3 to 1.13.4 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/48
+* build(deps): bump symfony/process from 7.4.4 to 7.4.5 by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/49
+* build(deps): bump laravel/framework from 12.48.1 to 12.49.0 in the actions-deps group by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/50
+* build(deps): bump the actions-deps group with 2 updates by @dependabot[bot] in https://github.com/jeffersongoncalves/teamkitv5/pull/51
+
+**Full Changelog**: https://github.com/jeffersongoncalves/teamkitv5/compare/5.1.1...5.1.2
+
 ## 5.1.1 - 2026-01-27
 
 ### What's Changed
