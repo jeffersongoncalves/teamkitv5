@@ -1322,8 +1322,16 @@ var require_module_cjs = __commonJS({
     var flushing = false;
     var queue = [];
     var lastFlushedIndex = -1;
+    var transactionActive = false;
     function scheduler(callback) {
       queueJob(callback);
+    }
+    function startTransaction() {
+      transactionActive = true;
+    }
+    function commitTransaction() {
+      transactionActive = false;
+      queueFlush();
     }
     function queueJob(job) {
       if (!queue.includes(job))
@@ -1337,6 +1345,8 @@ var require_module_cjs = __commonJS({
     }
     function queueFlush() {
       if (!flushing && !flushPending) {
+        if (transactionActive)
+          return;
         flushPending = true;
         queueMicrotask(flushJobs);
       }
@@ -1408,16 +1418,26 @@ var require_module_cjs = __commonJS({
         let value = getter();
         JSON.stringify(value);
         if (!firstTime) {
-          queueMicrotask(() => {
-            callback(value, oldValue);
-            oldValue = value;
-          });
-        } else {
-          oldValue = value;
+          if (typeof value === "object" || value !== oldValue) {
+            let previousValue = oldValue;
+            queueMicrotask(() => {
+              callback(value, previousValue);
+            });
+          }
         }
+        oldValue = value;
         firstTime = false;
       });
       return () => release(effectReference);
+    }
+    async function transaction(callback) {
+      startTransaction();
+      try {
+        await callback();
+        await Promise.resolve();
+      } finally {
+        commitTransaction();
+      }
     }
     var onAttributeAddeds = [];
     var onElRemoveds = [];
@@ -2943,7 +2963,10 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       get raw() {
         return raw;
       },
-      version: "3.15.5",
+      get transaction() {
+        return transaction;
+      },
+      version: "3.15.8",
       flushAndStopDeferringMutations,
       dontAutoEvaluateFunctions,
       disableEffectScheduling,
@@ -4082,6 +4105,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         handler4 = wrapHandler(handler4, (next, e) => {
           e.target === el && next(e);
         });
+      if (event === "submit") {
+        handler4 = wrapHandler(handler4, (next, e) => {
+          if (e.target._x_pendingModelUpdates) {
+            e.target._x_pendingModelUpdates.forEach((fn) => fn());
+          }
+          next(e);
+        });
+      }
       if (isKeyEvent(event) || isClickEvent(event)) {
         handler4 = wrapHandler(handler4, (next, e) => {
           if (isListeningForASpecificKeyThatHasntBeenPressed(e, modifiers)) {
@@ -4232,6 +4263,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         }
         if (hasBlurModifier) {
           listeners2.push(on3(el, "blur", modifiers, syncValue));
+          if (el.form) {
+            let syncCallback = () => syncValue({ target: el });
+            if (!el.form._x_pendingModelUpdates)
+              el.form._x_pendingModelUpdates = [];
+            el.form._x_pendingModelUpdates.push(syncCallback);
+            cleanup(() => el.form._x_pendingModelUpdates.splice(el.form._x_pendingModelUpdates.indexOf(syncCallback), 1));
+          }
         }
         if (hasEnterModifier) {
           listeners2.push(on3(el, "keydown", modifiers, (e) => {
@@ -9460,6 +9498,22 @@ function dataSet(object, key, value) {
   }
   dataSet(object[firstSegment], restOfSegments, value);
 }
+function dataDelete(object, key) {
+  let segments = parsePathSegments(key);
+  if (segments.length === 1) {
+    if (Array.isArray(object)) {
+      object.splice(segments[0], 1);
+    } else {
+      delete object[segments[0]];
+    }
+    return;
+  }
+  let firstSegment = segments.shift();
+  let restOfSegments = segments.join(".");
+  if (object[firstSegment] !== void 0) {
+    dataDelete(object[firstSegment], restOfSegments);
+  }
+}
 function diff(left, right, diffs = {}, path = "") {
   if (left === right)
     return diffs;
@@ -10975,8 +11029,16 @@ function sendMessages() {
       callback({
         message,
         compileRequest: (messages2) => {
-          if (Array.from(requests).some((request2) => Array.from(request2.messages).some((message2) => messages2.includes(message2)))) {
-            throw new Error("A request already contains one of the messages in this array");
+          let existingRequest = Array.from(requests).find(
+            (request2) => messages2.some((message2) => request2.messages.has(message2))
+          );
+          if (existingRequest) {
+            messages2.forEach((message2) => {
+              if (!existingRequest.messages.has(message2)) {
+                existingRequest.addMessage(message2);
+              }
+            });
+            return existingRequest;
           }
           let request = new MessageRequest();
           messages2.forEach((message2) => request.addMessage(message2));
@@ -11141,30 +11203,28 @@ function sendMessages() {
               message.invokeOnSuccess();
               if (message.isCancelled())
                 return;
-              message.component.mergeNewSnapshot(snapshotEncoded, effects, message.updates);
-              message.invokeOnSync();
-              if (message.isCancelled())
-                return;
-              message.component.processEffects(effects, request);
-              message.invokeOnEffect();
-              if (message.isCancelled())
-                return;
-              queueMicrotask(() => {
+              Alpine.transaction(async () => {
+                message.component.mergeNewSnapshot(snapshotEncoded, effects, message.updates);
+                message.invokeOnSync();
                 if (message.isCancelled())
                   return;
-                message.invokeOnMorph().finally(() => {
-                  if (!message.isCancelled()) {
-                    message.resolveActionPromises(
-                      message.pendingReturns,
-                      message.pendingReturnsMeta
-                    );
-                    message.invokeOnFinish();
-                  }
-                  requestAnimationFrame(() => {
-                    if (message.isCancelled())
-                      return;
-                    message.invokeOnRender();
-                  });
+                message.component.processEffects(effects, request);
+                message.invokeOnEffect();
+                if (message.isCancelled())
+                  return;
+                await message.invokeOnMorph();
+              }).then(() => {
+                if (!message.isCancelled()) {
+                  message.resolveActionPromises(
+                    message.pendingReturns,
+                    message.pendingReturnsMeta
+                  );
+                  message.invokeOnFinish();
+                }
+                requestAnimationFrame(() => {
+                  if (message.isCancelled())
+                    return;
+                  message.invokeOnRender();
                 });
               });
             }
@@ -11686,6 +11746,8 @@ var aliases = {
   "interceptRequest": "$interceptRequest",
   "dispatchTo": "$dispatchTo",
   "dispatchSelf": "$dispatchSelf",
+  "dispatchEl": "$dispatchEl",
+  "dispatchRef": "$dispatchRef",
   "removeUpload": "$removeUpload",
   "cancelUpload": "$cancelUpload",
   "uploadMultiple": "$uploadMultiple"
@@ -11702,6 +11764,8 @@ function generateWireObject(component, state) {
         return getProperty(component, property);
       } else if (property in state) {
         return state[property];
+      } else if (property === "toJSON") {
+        return () => component.toJSON();
       } else if (!["then"].includes(property)) {
         return getFallback(component)(property);
       }
@@ -11824,10 +11888,9 @@ wireProperty("$errors", (component) => getErrorsObject(component));
 wireProperty("$call", (component) => async (method, ...params) => {
   return await component.$wire[method](...params);
 });
-wireProperty("$island", (component) => async (name, options = {}) => {
-  return fireAction(component, "$refresh", [], {
-    island: { name, ...options }
-  });
+wireProperty("$island", (component) => (name, options = {}) => {
+  setNextActionMetadata({ island: { name, mode: "morph", ...options } });
+  return component.$wire;
 });
 wireProperty("$entangle", (component) => (name, live = false) => {
   return generateEntangleFunction(component)(name, live);
@@ -11868,6 +11931,8 @@ wireProperty("$hook", (component) => (name, callback) => {
 wireProperty("$dispatch", (component) => (...params) => dispatch2(component, ...params));
 wireProperty("$dispatchSelf", (component) => (...params) => dispatchSelf(component, ...params));
 wireProperty("$dispatchTo", () => (...params) => dispatchTo(...params));
+wireProperty("$dispatchEl", (component) => (...params) => dispatchEl(component, ...params));
+wireProperty("$dispatchRef", (component) => (...params) => dispatchRef(component, ...params));
 wireProperty("$upload", (component) => (...params) => upload(component, ...params));
 wireProperty("$uploadMultiple", (component) => (...params) => uploadMultiple(component, ...params));
 wireProperty("$removeUpload", (component) => (...params) => removeUpload(component, ...params));
@@ -11952,9 +12017,24 @@ var Component = class {
     this.effects = effects;
     this.canonical = extractData(deepClone(snapshot.data));
     let newData = extractData(deepClone(snapshot.data));
+    let changes = [];
+    let removals = [];
     Object.entries(dirty).forEach(([key, value]) => {
-      let rootKey = key.split(".")[0];
-      this.reactive[rootKey] = newData[rootKey];
+      if (value === "__rm__") {
+        removals.push(key);
+      } else {
+        changes.push(key);
+      }
+    });
+    changes.forEach((key) => {
+      dataSet(this.reactive, key, dataGet(newData, key));
+    });
+    removals.sort((a, b) => {
+      let aNum = parseInt(a.split(".").pop()) || 0;
+      let bNum = parseInt(b.split(".").pop()) || 0;
+      return bNum - aNum;
+    }).forEach((key) => {
+      dataDelete(this.reactive, key);
     });
     return dirty;
   }
@@ -12088,6 +12168,14 @@ var Component = class {
   }
   getJsActions() {
     return this.jsActions;
+  }
+  toJSON() {
+    return {
+      id: this.id,
+      name: this.name,
+      key: this.key,
+      data: Object.fromEntries(Object.entries(this.ephemeral))
+    };
   }
   addCleanup(cleanup) {
     this.cleanups.push(cleanup);
@@ -13724,6 +13812,7 @@ on("effect", ({ component, effects }) => {
     Object.entries(scripts).forEach(([key, content]) => {
       onlyIfScriptHasntBeenRunAlreadyForThisComponent(component, key, () => {
         let scriptContent = extractScriptTagContent(content);
+        scriptContent = scriptContent.includes("await") ? `(async()=>{ ${scriptContent} })()` : `(()=>{ ${scriptContent} })()`;
         import_alpinejs7.default.dontAutoEvaluateFunctions(() => {
           evaluateExpression(component.el, scriptContent, {
             context: component.$wire,
@@ -14884,12 +14973,14 @@ function whenTargetsArePartOfRequest(component, el, targets, inverted, [startLoa
   return interceptMessage(({ message, onSend, onSuccess, onFinish }) => {
     if (component !== message.component)
       return;
-    let island = closestIsland(el);
-    if (island && !message.hasActionForIsland(island)) {
-      return;
-    }
-    if (!island && !message.hasActionForComponent()) {
-      return;
+    if (targets.length === 0) {
+      let island = closestIsland(el);
+      if (island && !message.hasActionForIsland(island)) {
+        return;
+      }
+      if (!island && !message.hasActionForComponent()) {
+        return;
+      }
     }
     let matches = true;
     let cleared = false;
@@ -15043,8 +15134,10 @@ directive("model", ({ el, directive: directive2, component, cleanup }) => {
     ephemeralModifiers = ephemeralModifiers.filter((m) => m !== "lazy");
     networkModifiers.push("change");
   }
-  if (!(ephemeralModifiers.includes("self") || networkModifiers.includes("self")) && !(ephemeralModifiers.includes("deep") || networkModifiers.includes("deep"))) {
-    ephemeralModifiers.push("self");
+  if (!(ephemeralModifiers.includes("deep") || networkModifiers.includes("deep"))) {
+    if (!ephemeralModifiers.includes("self")) {
+      ephemeralModifiers.push("self");
+    }
   }
   let ephemeralOnBlur = ephemeralModifiers.includes("blur");
   let ephemeralOnChange = ephemeralModifiers.includes("change") || ephemeralModifiers.includes("lazy");
