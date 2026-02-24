@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 5.2.2 - 2026-02-24
+
+Bump Filament to v5.2.2
+
 ## 5.2.0 - 2026-02-04
 
 ### What's Changed
