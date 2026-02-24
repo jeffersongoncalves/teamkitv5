@@ -2,16 +2,16 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "jeffersongoncalves/teamkitv5",
     "type": "project",
-    "description": "The skeleton application for the FilamentPHP.",
+    "description": "TeamKit starter kit built on Laravel 12.x and Filament 5.x with a ready-to-use multi-panel structure.",
     "keywords": [
         "laravel-starter-kit",
         "starter-kit",
         "filament-starter-kit",
         "laravel",
-        "framework",
         "filament",
-        "kit",
-        "start-kit"
+        "filament-v5",
+        "livewire",
+        "tailwindcss"
     ],
     "license": "MIT",
     "require": {
