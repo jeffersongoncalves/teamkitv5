@@ -2951,7 +2951,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         });
         return obj;
       }
-      var Alpine24 = {
+      var Alpine25 = {
         get reactive() {
           return reactive;
         },
@@ -3025,7 +3025,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         data,
         bind: bind2
       };
-      var alpine_default = Alpine24;
+      var alpine_default = Alpine25;
       var safemap = /* @__PURE__ */ new WeakMap();
       var globals = /* @__PURE__ */ new Set();
       Object.getOwnPropertyNames(globalThis).forEach((key) => {
@@ -5204,22 +5204,6 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   function isNumeric(subject) {
     return !isNaN(parseInt(subject));
   }
-  function dataDelete(object, key) {
-    let segments = parsePathSegments(key);
-    if (segments.length === 1) {
-      if (Array.isArray(object)) {
-        object.splice(segments[0], 1);
-      } else {
-        delete object[segments[0]];
-      }
-      return;
-    }
-    let firstSegment = segments.shift();
-    let restOfSegments = segments.join(".");
-    if (object[firstSegment] !== void 0) {
-      dataDelete(object[firstSegment], restOfSegments);
-    }
-  }
   function diff(left, right, diffs = {}, path = "") {
     if (left === right)
       return diffs;
@@ -5232,6 +5216,11 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return diffs;
     }
     let leftKeys = Object.keys(left);
+    let rightKeys = Object.keys(right);
+    if (isObject(left) && leftKeys.some((key, i) => key !== rightKeys[i])) {
+      diffs[path] = right;
+      return diffs;
+    }
     Object.entries(right).forEach(([key, value]) => {
       diffs = { ...diffs, ...diff(left[key], right[key], diffs, path === "" ? key : `${path}.${key}`) };
       leftKeys = leftKeys.filter((i) => i !== key);
@@ -5288,6 +5277,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       diffs[path] = dataGet(rootRight, path);
       return { changed: true, consolidated: true };
     }
+    if (isObject(left) && leftKeys.length === rightKeys.length && leftKeys.some((key, i) => key !== rightKeys[i])) {
+      if (path !== "") {
+        diffs[path] = dataGet(rootRight, path);
+        return { changed: true, consolidated: true };
+      }
+    }
     let keysMatch = leftKeys.every((k) => rightKeys.includes(k));
     if (!keysMatch && !convertedToObject) {
       if (path !== "") {
@@ -5312,7 +5307,40 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return { changed: true, consolidated: true };
     }
     Object.assign(diffs, childDiffs);
-    return { changed: changedCount > 0, consolidated: consolidatedCount > 0 };
+    return { changed: changedCount > 0, consolidated: consolidatedCount > 0 || convertedToObject };
+  }
+  function diffAndPatchRecursive(left, right, target) {
+    let leftKeys = new Set(Object.keys(left || {}));
+    let rightKeys = Object.keys(right);
+    if (!isArray(target) && [...leftKeys].some((key, i) => key !== rightKeys[i])) {
+      for (let key of Object.keys(target))
+        delete target[key];
+      for (let key of rightKeys)
+        target[key] = right[key];
+      return;
+    }
+    rightKeys.forEach((key) => {
+      leftKeys.delete(key);
+      if (deeplyEqual(left?.[key], right[key]))
+        return;
+      if (isObjecty(left?.[key]) && isObjecty(right[key]) && isObjecty(target[key]) && isArray(right[key]) === isArray(target[key])) {
+        diffAndPatchRecursive(left[key], right[key], target[key]);
+      } else {
+        target[key] = right[key];
+      }
+    });
+    let removedKeys = [...leftKeys];
+    removedKeys.sort((a, b) => {
+      let aNum = parseInt(a) || 0;
+      let bNum = parseInt(b) || 0;
+      return bNum - aNum;
+    }).forEach((key) => {
+      if (isArray(target)) {
+        target.splice(parseInt(key), 1);
+      } else {
+        delete target[key];
+      }
+    });
   }
   function extractData(payload) {
     let value = isSynthetic(payload) ? payload[0] : payload;
@@ -5353,6 +5381,31 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return nonce;
     }
     return null;
+  }
+  function replaceNoncesInHtml(html) {
+    let nonce2 = getNonce();
+    if (!nonce2)
+      return html;
+    let nonceMatch = html.match(/nonce="([^"]+)"/);
+    if (!nonceMatch)
+      return html;
+    let newNonce = nonceMatch[1];
+    if (newNonce === nonce2)
+      return html;
+    return html.replaceAll(`nonce="${newNonce}"`, `nonce="${nonce2}"`);
+  }
+  function cloneScriptTag(el) {
+    let script = document.createElement("script");
+    script.textContent = el.textContent;
+    script.async = el.async;
+    for (let attr of el.attributes) {
+      if (attr.name === "nonce") {
+        script.nonce = getNonce() || el.nonce;
+      } else {
+        script.setAttribute(attr.name, attr.value);
+      }
+    }
+    return script;
   }
   function getModuleUrl() {
     return document.querySelector("[data-module-url]")?.getAttribute("data-module-url") ?? window.livewireScriptConfig["moduleUrl"] ?? null;
@@ -5722,7 +5775,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/$wire.js
-  var import_alpinejs2 = __toESM(require_module_cjs());
+  var import_alpinejs3 = __toESM(require_module_cjs());
 
   // js/hooks.js
   var listeners = [];
@@ -6363,6 +6416,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         let meta = returnsMeta[index2];
         if (meta?.errors) {
           action.rejectPromise({ status: 422, body: null, json: null, errors: meta.errors });
+          action.invokeOnFinish();
+          resolvedActions.add(action);
+          return;
+        }
+        if (meta?.status) {
+          action.rejectPromise({ status: meta.status, body: null, json: null, errors: null });
           action.invokeOnFinish();
           resolvedActions.add(action);
           return;
@@ -7058,10 +7117,19 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   registerLegacyEventSupport(interceptRequest, interceptMessage);
 
   // js/features/supportErrors.js
+  var import_alpinejs2 = __toESM(require_module_cjs());
   function getErrorsObject(component) {
+    let state = component.__errorsState ??= import_alpinejs2.default.reactive({
+      clientErrors: null
+    });
+    component.__lastErrorsSnapshot ??= component.snapshot;
     return {
       messages() {
-        return component.snapshot.memo.errors;
+        if (component.__lastErrorsSnapshot !== component.snapshot) {
+          state.clientErrors = null;
+          component.__lastErrorsSnapshot = component.snapshot;
+        }
+        return state.clientErrors ?? component.snapshot.memo.errors;
       },
       keys() {
         return Object.keys(this.messages());
@@ -7101,7 +7169,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         return Array.isArray(firstMessage) ? firstMessage[0] : firstMessage;
       },
       get(key) {
-        return component.snapshot.memo.errors[key] || [];
+        return this.messages()[key] || [];
       },
       all() {
         return Object.values(this.messages()).flat();
@@ -7119,6 +7187,15 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         return Object.values(this.messages()).reduce((total, array) => {
           return total + array.length;
         }, 0);
+      },
+      clear(field = null) {
+        if (field === null) {
+          state.clientErrors = {};
+        } else {
+          let errors = { ...state.clientErrors ?? component.snapshot.memo.errors };
+          delete errors[field];
+          state.clientErrors = errors;
+        }
       }
     };
   }
@@ -7330,8 +7407,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
 
   // js/directives/wire-dirty.js
   var refreshDirtyStatesByComponent = new WeakBag();
-  on("commit", ({ component, respond }) => {
-    respond(() => {
+  on("commit", ({ component, succeed }) => {
+    succeed(() => {
       setTimeout(() => {
         refreshDirtyStatesByComponent.each(component, (i) => i(false));
       });
@@ -7490,7 +7567,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   function getFallback(component) {
     return fallback(component);
   }
-  import_alpinejs2.default.magic("wire", (el, { cleanup }) => {
+  import_alpinejs3.default.magic("wire", (el, { cleanup }) => {
     let component;
     return new Proxy({}, {
       get(target, property) {
@@ -7576,7 +7653,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     });
   });
   wireProperty("$dirty", (component) => (property) => {
-    let reactive = import_alpinejs2.default.reactive({ dirty: false });
+    let reactive = import_alpinejs3.default.reactive({ dirty: false });
     interceptComponentMessage(component, ({ onFinish }) => {
       onFinish(() => {
         queueMicrotask(() => {
@@ -7584,7 +7661,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         });
       });
     });
-    import_alpinejs2.default.effect(() => {
+    import_alpinejs3.default.effect(() => {
       reactive.dirty = checkDirty(component, property);
     });
     return reactive.dirty;
@@ -7619,12 +7696,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     let getter = () => {
       return dataGet(component.reactive, path);
     };
-    let unwatch = import_alpinejs2.default.watch(getter, callback);
+    let unwatch = import_alpinejs3.default.watch(getter, callback);
     component.addCleanup(unwatch);
     return unwatch;
   });
   wireProperty("$effect", (component) => (callback) => {
-    let effect = import_alpinejs2.default.effect(callback);
+    let effect = import_alpinejs3.default.effect(callback);
     component.addCleanup(effect);
     return effect;
   });
@@ -7658,7 +7735,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   wireProperty("$parent", (component) => {
     if (parentMemo.has(component))
       return parentMemo.get(component).$wire;
-    let parent = component.parent;
+    let parent = findComponentByEl(component.el.parentElement, false);
+    if (!parent)
+      return;
     parentMemo.set(component, parent);
     return parent.$wire;
   });
@@ -7734,25 +7813,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       this.effects = effects;
       this.canonical = extractData(deepClone(snapshot.data));
       let newData = extractData(deepClone(snapshot.data));
-      let changes = [];
-      let removals = [];
-      Object.entries(dirty).forEach(([key, value]) => {
-        if (value === "__rm__") {
-          removals.push(key);
-        } else {
-          changes.push(key);
-        }
-      });
-      changes.forEach((key) => {
-        dataSet(this.reactive, key, dataGet(newData, key));
-      });
-      removals.sort((a, b) => {
-        let aNum = parseInt(a.split(".").pop()) || 0;
-        let bNum = parseInt(b.split(".").pop()) || 0;
-        return bNum - aNum;
-      }).forEach((key) => {
-        dataDelete(this.reactive, key);
-      });
+      diffAndPatchRecursive(updatedOldCanonical, newData, this.reactive);
       return dirty;
     }
     queueUpdate(propertyName, value) {
@@ -7829,6 +7890,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     }
     getDeepChildrenWithBindings(callback) {
       this.getDeepChildren((child) => {
+        if (child.isLazy && !child.hasBeenLazyLoaded)
+          return;
         if (child.hasReactiveProps() || child.hasWireModelableBindings()) {
           callback(child);
         }
@@ -8181,8 +8244,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // node_modules/@alpinejs/collapse/dist/module.esm.js
-  function src_default(Alpine24) {
-    Alpine24.directive("collapse", collapse);
+  function src_default(Alpine25) {
+    Alpine25.directive("collapse", collapse);
     collapse.inline = (el, { modifiers }) => {
       if (!modifiers.includes("min"))
         return;
@@ -8202,7 +8265,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       if (!el._x_isShown)
         el.style.overflow = "hidden";
       let setFunction = (el2, styles) => {
-        let revertFunction = Alpine24.setStyles(el2, styles);
+        let revertFunction = Alpine25.setStyles(el2, styles);
         return styles.height ? () => {
         } : revertFunction;
       };
@@ -8225,7 +8288,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           if (current === full) {
             current = floor2;
           }
-          Alpine24.transition(el, Alpine24.setStyles, {
+          Alpine25.transition(el, Alpine25.setStyles, {
             during: transitionStyles,
             start: { height: current + "px" },
             end: { height: full + "px" }
@@ -8239,7 +8302,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         }, after = () => {
         }) {
           let full = el.getBoundingClientRect().height;
-          Alpine24.transition(el, setFunction, {
+          Alpine25.transition(el, setFunction, {
             during: transitionStyles,
             start: { height: full + "px" },
             end: { height: floor2 + "px" }
@@ -9022,14 +9085,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     trap.updateContainerElements(elements);
     return trap;
   };
-  function src_default2(Alpine24) {
+  function src_default2(Alpine25) {
     let lastFocused;
     let currentFocused;
     window.addEventListener("focusin", () => {
       lastFocused = currentFocused;
       currentFocused = document.activeElement;
     });
-    Alpine24.magic("focus", (el) => {
+    Alpine25.magic("focus", (el) => {
       let within = el;
       return {
         __noscroll: false,
@@ -9133,7 +9196,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         }
       };
     });
-    Alpine24.directive("trap", Alpine24.skipDuringClone(
+    Alpine25.directive("trap", Alpine25.skipDuringClone(
       (el, { expression, modifiers }, { effect, evaluateLater, cleanup }) => {
         let evaluator = evaluateLater(expression);
         let oldValue = false;
@@ -9153,7 +9216,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         }
         if (modifiers.includes("inert")) {
           options.onPostActivate = () => {
-            Alpine24.nextTick(() => {
+            Alpine25.nextTick(() => {
               undoInert = setInert(el);
             });
           };
@@ -9232,7 +9295,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var module_default2 = src_default2;
 
   // node_modules/@alpinejs/persist/dist/module.esm.js
-  function src_default3(Alpine24) {
+  function src_default3(Alpine25) {
     let persist = () => {
       let alias;
       let storage;
@@ -9247,11 +9310,11 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           setItem: dummy.set.bind(dummy)
         };
       }
-      return Alpine24.interceptor((initialValue, getter, setter, path, key) => {
+      return Alpine25.interceptor((initialValue, getter, setter, path, key) => {
         let lookup = alias || `_x_${path}`;
         let initial = storageHas(lookup, storage) ? storageGet(lookup, storage) : initialValue;
         setter(initial);
-        Alpine24.effect(() => {
+        Alpine25.effect(() => {
           let value = getter();
           storageSet(lookup, value, storage);
           setter(value);
@@ -9267,12 +9330,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         };
       });
     };
-    Object.defineProperty(Alpine24, "$persist", { get: () => persist() });
-    Alpine24.magic("persist", persist);
-    Alpine24.persist = (key, { get, set }, storage = localStorage) => {
+    Object.defineProperty(Alpine25, "$persist", { get: () => persist() });
+    Alpine25.magic("persist", persist);
+    Alpine25.persist = (key, { get, set }, storage = localStorage) => {
       let initial = storageHas(key, storage) ? storageGet(key, storage) : get();
       set(initial);
-      Alpine24.effect(() => {
+      Alpine25.effect(() => {
         let value = get();
         storageSet(key, value, storage);
         set(value);
@@ -9294,8 +9357,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var module_default3 = src_default3;
 
   // node_modules/@alpinejs/intersect/dist/module.esm.js
-  function src_default4(Alpine24) {
-    Alpine24.directive("intersect", Alpine24.skipDuringClone((el, { value, expression, modifiers }, { evaluateLater, cleanup }) => {
+  function src_default4(Alpine25) {
+    Alpine25.directive("intersect", Alpine25.skipDuringClone((el, { value, expression, modifiers }, { evaluateLater, cleanup }) => {
       let evaluate2 = evaluateLater(expression);
       let options = {
         rootMargin: getRootMargin(modifiers),
@@ -11561,8 +11624,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       node = node.nextElementSibling;
     }
   }
-  function src_default5(Alpine24) {
-    Alpine24.directive("sort", (el, { value, modifiers, expression }, { effect, evaluate: evaluate2, cleanup }) => {
+  function src_default5(Alpine25) {
+    Alpine25.directive("sort", (el, { value, modifiers, expression }, { effect, evaluate: evaluate2, cleanup }) => {
       if (value === "config") {
         return;
       }
@@ -11693,8 +11756,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var module_default5 = src_default5;
 
   // node_modules/@alpinejs/resize/dist/module.esm.js
-  function src_default6(Alpine24) {
-    Alpine24.directive("resize", Alpine24.skipDuringClone((el, { value, expression, modifiers }, { evaluateLater, cleanup }) => {
+  function src_default6(Alpine25) {
+    Alpine25.directive("resize", Alpine25.skipDuringClone((el, { value, expression, modifiers }, { evaluateLater, cleanup }) => {
       let evaluator = evaluateLater(expression);
       let evaluate2 = (width, height) => {
         evaluator(() => {
@@ -12911,21 +12974,21 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       platform: platformWithCache
     });
   };
-  function src_default7(Alpine24) {
-    Alpine24.magic("anchor", (el) => {
+  function src_default7(Alpine25) {
+    Alpine25.magic("anchor", (el) => {
       if (!el._x_anchor)
         throw "Alpine: No x-anchor directive found on element using $anchor...";
       return el._x_anchor;
     });
-    Alpine24.interceptClone((from, to) => {
+    Alpine25.interceptClone((from, to) => {
       if (from && from._x_anchor && !to._x_anchor) {
         to._x_anchor = from._x_anchor;
       }
     });
-    Alpine24.directive("anchor", Alpine24.skipDuringClone(
+    Alpine25.directive("anchor", Alpine25.skipDuringClone(
       (el, { expression, modifiers, value }, { cleanup, evaluate: evaluate2 }) => {
         let { placement, offsetValue, unstyled } = getOptions(modifiers);
-        el._x_anchor = Alpine24.reactive({ x: 0, y: 0 });
+        el._x_anchor = Alpine25.reactive({ x: 0, y: 0 });
         let reference = evaluate2(expression);
         if (!reference)
           throw "Alpine: no element provided to x-anchor...";
@@ -13020,7 +13083,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       this.errorHandlers[key] = callback;
     }
     getUrl() {
-      return this.url ?? new URL(window.location.href);
+      if (this.url) {
+        if (this.url instanceof URL)
+          this.url.hash = window.location.hash;
+        return this.url;
+      }
+      return new URL(window.location.href);
     }
     replaceState(url, updates) {
       this.url = url;
@@ -13268,19 +13336,19 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/plugins/navigate/teleport.js
-  var import_alpinejs3 = __toESM(require_module_cjs());
+  var import_alpinejs4 = __toESM(require_module_cjs());
   function packUpPersistedTeleports(persistedEl) {
-    import_alpinejs3.default.mutateDom(() => {
+    import_alpinejs4.default.mutateDom(() => {
       persistedEl.querySelectorAll("[data-teleport-template]").forEach((i) => i._x_teleport.remove());
     });
   }
   function removeAnyLeftOverStaleTeleportTargets(body) {
-    import_alpinejs3.default.mutateDom(() => {
+    import_alpinejs4.default.mutateDom(() => {
       body.querySelectorAll("[data-teleport-target]").forEach((i) => i.remove());
     });
   }
   function unPackPersistedTeleports(persistedEl) {
-    import_alpinejs3.default.walk(persistedEl, (el, skip) => {
+    import_alpinejs4.default.walk(persistedEl, (el, skip) => {
       if (!el._x_teleport)
         return;
       el._x_teleportPutBack();
@@ -13323,14 +13391,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/plugins/navigate/persist.js
-  var import_alpinejs4 = __toESM(require_module_cjs());
+  var import_alpinejs5 = __toESM(require_module_cjs());
   var els = {};
   function storePersistantElementsForLater(callback) {
     els = {};
     document.querySelectorAll("[x-persist]").forEach((i) => {
       els[i.getAttribute("x-persist")] = i;
       callback(i);
-      import_alpinejs4.default.mutateDom(() => {
+      import_alpinejs5.default.mutateDom(() => {
         i.remove();
       });
     });
@@ -13344,14 +13412,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       usedPersists.push(i.getAttribute("x-persist"));
       old._x_wasPersisted = true;
       callback(old, i);
-      import_alpinejs4.default.mutateDom(() => {
+      import_alpinejs5.default.mutateDom(() => {
         i.replaceWith(old);
       });
     });
     Object.entries(els).forEach(([key, el]) => {
       if (usedPersists.includes(key))
         return;
-      import_alpinejs4.default.destroyTree(el);
+      import_alpinejs5.default.destroyTree(el);
     });
     els = {};
   }
@@ -13520,6 +13588,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     "aria-hidden"
   ];
   function swapCurrentPageWithNewHtml(html, andThen) {
+    html = replaceNoncesInHtml(html);
     let newDocument = new DOMParser().parseFromString(html, "text/html");
     let newHtml = newDocument.documentElement;
     let newBody = document.adoptNode(newDocument.body);
@@ -13568,13 +13637,16 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
   function mergeNewHead(newHead) {
     let children = Array.from(document.head.children);
-    let headChildrenHtmlLookup = children.map((i) => i.outerHTML);
+    let headChildrenHtmlLookup = children.map(
+      (i) => ignoreAttributes(i.outerHTML, attributesExemptFromScriptTagHashing)
+    );
     let garbageCollector = document.createDocumentFragment();
     let touchedHeadElements = [];
     let remoteScriptsPromises = [];
     for (let child of Array.from(newHead.children)) {
       if (isAsset(child)) {
-        if (!headChildrenHtmlLookup.includes(child.outerHTML)) {
+        let childHtml = ignoreAttributes(child.outerHTML, attributesExemptFromScriptTagHashing);
+        if (!headChildrenHtmlLookup.includes(childHtml)) {
           if (isTracked(child)) {
             if (ifTheQueryStringChangedSinceLastRequest(child, children)) {
               setTimeout(() => window.location.reload());
@@ -13620,15 +13692,6 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       document.head.appendChild(script);
     });
   }
-  function cloneScriptTag(el) {
-    let script = document.createElement("script");
-    script.textContent = el.textContent;
-    script.async = el.async;
-    for (let attr of el.attributes) {
-      script.setAttribute(attr.name, attr.value);
-    }
-    return script;
-  }
   function isTracked(el) {
     return el.hasAttribute("data-navigate-track");
   }
@@ -13673,8 +13736,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var showProgressBar = true;
   var restoreScroll = true;
   var autofocus = false;
-  function navigate_default(Alpine24) {
-    Alpine24.navigate = (url, options = {}) => {
+  function navigate_default(Alpine25) {
+    Alpine25.navigate = (url, options = {}) => {
       let { preserveScroll = false } = options;
       let destination = createUrlObjectFromString2(url);
       let prevented = fireEventForOtherLibrariesToHookInto("alpine:navigate", {
@@ -13686,11 +13749,11 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         return;
       navigateTo(destination, { preserveScroll });
     };
-    Alpine24.navigate.disableProgressBar = () => {
+    Alpine25.navigate.disableProgressBar = () => {
       showProgressBar = false;
     };
-    Alpine24.addInitSelector(() => `[${Alpine24.prefixed("navigate")}]`);
-    Alpine24.directive("navigate", (el, { modifiers }) => {
+    Alpine25.addInitSelector(() => `[${Alpine25.prefixed("navigate")}]`);
+    Alpine25.directive("navigate", (el, { modifiers }) => {
       let shouldPrefetchOnHover = modifiers.includes("hover");
       let preserveScroll = modifiers.includes("preserve-scroll");
       shouldPrefetchOnHover && whenThisLinkIsHoveredFor(el, 60, () => {
@@ -13734,7 +13797,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         restoreScroll && storeScrollInformationInHtmlBeforeNavigatingAway();
         cleanupAlpineElementsOnThePageThatArentInsideAPersistedElement();
         shouldPushToHistoryState && updateCurrentPageHtmlInHistoryStateForLaterBackButtonClicks();
-        preventAlpineFromPickingUpDomChanges(Alpine24, (andAfterAllThis) => {
+        preventAlpineFromPickingUpDomChanges(Alpine25, (andAfterAllThis) => {
           enablePersist && storePersistantElementsForLater((persistedEl) => {
             packUpPersistedTeleports(persistedEl);
             packUpPersistedPopovers(persistedEl);
@@ -13757,7 +13820,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
                 setTimeout(() => {
                   autofocus && autofocusElementsWithTheAutofocusAttribute();
                 });
-                nowInitializeAlpineOnTheNewPage(Alpine24);
+                nowInitializeAlpineOnTheNewPage(Alpine25);
                 fireEventForOtherLibrariesToHookInto("alpine:navigated");
                 showProgressBar && finishAndHideProgressBar();
               });
@@ -13797,7 +13860,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           onSwap: (callback) => swapCallbacks.push(callback)
         });
         updateCurrentPageHtmlInSnapshotCacheForLaterBackButtonClicks(currentPageKey, currentPageUrl);
-        preventAlpineFromPickingUpDomChanges(Alpine24, (andAfterAllThis) => {
+        preventAlpineFromPickingUpDomChanges(Alpine25, (andAfterAllThis) => {
           enablePersist && storePersistantElementsForLater((persistedEl) => {
             packUpPersistedTeleports(persistedEl);
             packUpPersistedPopovers(persistedEl);
@@ -13813,7 +13876,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             swapCallbacks.forEach((callback) => callback());
             andAfterAllThis(() => {
               autofocus && autofocusElementsWithTheAutofocusAttribute();
-              nowInitializeAlpineOnTheNewPage(Alpine24);
+              nowInitializeAlpineOnTheNewPage(Alpine25);
               fireEventForOtherLibrariesToHookInto("alpine:navigated");
             });
           });
@@ -13829,10 +13892,10 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       fetchHtml(fromDestination, callback, errorCallback);
     });
   }
-  function preventAlpineFromPickingUpDomChanges(Alpine24, callback) {
-    Alpine24.stopObservingMutations();
+  function preventAlpineFromPickingUpDomChanges(Alpine25, callback) {
+    Alpine25.stopObservingMutations();
     callback((afterAllThis) => {
-      Alpine24.startObservingMutations();
+      Alpine25.startObservingMutations();
       queueMicrotask(() => {
         afterAllThis();
       });
@@ -13847,8 +13910,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     document.dispatchEvent(event);
     return event.defaultPrevented;
   }
-  function nowInitializeAlpineOnTheNewPage(Alpine24) {
-    Alpine24.initTree(document.body, void 0, (el, skip) => {
+  function nowInitializeAlpineOnTheNewPage(Alpine25) {
+    Alpine25.initTree(document.body, void 0, (el, skip) => {
       if (el._x_wasPersisted)
         skip();
     });
@@ -13871,8 +13934,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/plugins/history/index.js
-  function history(Alpine24) {
-    Alpine24.magic("queryString", (el, { interceptor }) => {
+  function history(Alpine25) {
+    Alpine25.magic("queryString", (el, { interceptor }) => {
       let alias;
       let alwaysShow = false;
       let usePush = false;
@@ -13881,9 +13944,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         let { initial, replace: replace2, push: push2, pop } = track(queryKey, initialSeedValue, alwaysShow);
         setter(initial);
         if (!usePush) {
-          Alpine24.effect(() => replace2(getter()));
+          Alpine25.effect(() => replace2(getter()));
         } else {
-          Alpine24.effect(() => push2(getter()));
+          Alpine25.effect(() => push2(getter()));
           pop(async (newValue) => {
             setter(newValue);
             let tillTheEndOfTheMicrotaskQueue = () => Promise.resolve();
@@ -13906,7 +13969,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         };
       });
     });
-    Alpine24.history = { track };
+    Alpine25.history = { track };
   }
   function track(name, initialSeedValue, alwaysShow = false, except = null) {
     let { has, get, set, remove } = queryStringUtils();
@@ -14436,15 +14499,15 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     to.setAttribute("id", fromId);
     to.id = fromId;
   }
-  function src_default8(Alpine24) {
-    Alpine24.morph = morph;
-    Alpine24.morphBetween = morphBetween;
+  function src_default8(Alpine25) {
+    Alpine25.morph = morph;
+    Alpine25.morphBetween = morphBetween;
   }
   var module_default8 = src_default8;
 
   // node_modules/@alpinejs/mask/dist/module.esm.js
-  function src_default9(Alpine24) {
-    Alpine24.directive("mask", (el, { value, expression }, { effect, evaluateLater, cleanup }) => {
+  function src_default9(Alpine25) {
+    Alpine25.directive("mask", (el, { value, expression }, { effect, evaluateLater, cleanup }) => {
       let templateFn = () => expression;
       let lastInputValue = "";
       queueMicrotask(() => {
@@ -14453,7 +14516,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           effect(() => {
             templateFn = (input) => {
               let result;
-              Alpine24.dontAutoEvaluateFunctions(() => {
+              Alpine25.dontAutoEvaluateFunctions(() => {
                 evaluator((value2) => {
                   result = typeof value2 === "function" ? value2(input) : value2;
                 }, { scope: {
@@ -14619,24 +14682,24 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   var module_default9 = src_default9;
 
   // js/lifecycle.js
-  var import_alpinejs5 = __toESM(require_module_cjs());
+  var import_alpinejs6 = __toESM(require_module_cjs());
   function start() {
     setTimeout(() => ensureLivewireScriptIsntMisplaced());
     dispatch(document, "livewire:init");
     dispatch(document, "livewire:initializing");
-    import_alpinejs5.default.plugin(module_default8);
-    import_alpinejs5.default.plugin(history);
-    import_alpinejs5.default.plugin(module_default4);
-    import_alpinejs5.default.plugin(module_default5);
-    import_alpinejs5.default.plugin(module_default6);
-    import_alpinejs5.default.plugin(module_default);
-    import_alpinejs5.default.plugin(module_default7);
-    import_alpinejs5.default.plugin(module_default2);
-    import_alpinejs5.default.plugin(module_default3);
-    import_alpinejs5.default.plugin(navigate_default);
-    import_alpinejs5.default.plugin(module_default9);
-    import_alpinejs5.default.addRootSelector(() => "[wire\\:id]");
-    import_alpinejs5.default.onAttributesAdded((el, attributes) => {
+    import_alpinejs6.default.plugin(module_default8);
+    import_alpinejs6.default.plugin(history);
+    import_alpinejs6.default.plugin(module_default4);
+    import_alpinejs6.default.plugin(module_default5);
+    import_alpinejs6.default.plugin(module_default6);
+    import_alpinejs6.default.plugin(module_default);
+    import_alpinejs6.default.plugin(module_default7);
+    import_alpinejs6.default.plugin(module_default2);
+    import_alpinejs6.default.plugin(module_default3);
+    import_alpinejs6.default.plugin(navigate_default);
+    import_alpinejs6.default.plugin(module_default9);
+    import_alpinejs6.default.addRootSelector(() => "[wire\\:id]");
+    import_alpinejs6.default.onAttributesAdded((el, attributes) => {
       if (!Array.from(attributes).some((attribute) => matchesForLivewireDirective(attribute.name)))
         return;
       let component = findComponentByEl(el, false);
@@ -14647,25 +14710,25 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           return;
         let directive2 = extractDirective(el, attribute.name);
         trigger("directive.init", { el, component, directive: directive2, cleanup: (callback) => {
-          import_alpinejs5.default.onAttributeRemoved(el, directive2.raw, callback);
+          import_alpinejs6.default.onAttributeRemoved(el, directive2.raw, callback);
         } });
       });
     });
-    import_alpinejs5.default.interceptInit(
-      import_alpinejs5.default.skipDuringClone(
+    import_alpinejs6.default.interceptInit(
+      import_alpinejs6.default.skipDuringClone(
         (el) => {
           if (!Array.from(el.attributes).some((attribute) => matchesForLivewireDirective(attribute.name)))
             return;
           if (el.hasAttribute("wire:id") && !el.__livewire && !hasComponent(el.getAttribute("wire:id"))) {
             let component2 = initComponent(el);
-            import_alpinejs5.default.onAttributeRemoved(el, "wire:id", () => {
+            import_alpinejs6.default.onAttributeRemoved(el, "wire:id", () => {
               destroyComponent(component2.id);
             });
           }
           let directives = Array.from(el.getAttributeNames()).filter((name) => matchesForLivewireDirective(name)).map((name) => extractDirective(el, name));
           directives.forEach((directive2) => {
             trigger("directive.global.init", { el, directive: directive2, cleanup: (callback) => {
-              import_alpinejs5.default.onAttributeRemoved(el, directive2.raw, callback);
+              import_alpinejs6.default.onAttributeRemoved(el, directive2.raw, callback);
             } });
           });
           let component = findComponentByEl(el, false);
@@ -14673,7 +14736,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             trigger("element.init", { el, component });
             directives.forEach((directive2) => {
               trigger("directive.init", { el, component, directive: directive2, cleanup: (callback) => {
-                import_alpinejs5.default.onAttributeRemoved(el, directive2.raw, callback);
+                import_alpinejs6.default.onAttributeRemoved(el, directive2.raw, callback);
               } });
             });
           }
@@ -14684,13 +14747,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           let directives = Array.from(el.getAttributeNames()).filter((name) => matchesForLivewireDirective(name)).map((name) => extractDirective(el, name));
           directives.forEach((directive2) => {
             trigger("directive.global.init", { el, directive: directive2, cleanup: (callback) => {
-              import_alpinejs5.default.onAttributeRemoved(el, directive2.raw, callback);
+              import_alpinejs6.default.onAttributeRemoved(el, directive2.raw, callback);
             } });
           });
         }
       )
     );
-    import_alpinejs5.default.start();
+    import_alpinejs6.default.start();
     setTimeout(() => window.Livewire.initialRenderIsFinished = true);
     dispatch(document, "livewire:initialized");
   }
@@ -14705,7 +14768,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/index.js
-  var import_alpinejs22 = __toESM(require_module_cjs());
+  var import_alpinejs23 = __toESM(require_module_cjs());
 
   // js/features/supportListeners.js
   on("effect", ({ component, effects }) => {
@@ -14733,14 +14796,31 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/features/supportScriptsAndAssets.js
-  var import_alpinejs7 = __toESM(require_module_cjs());
+  var import_alpinejs8 = __toESM(require_module_cjs());
 
   // js/evaluator.js
-  var import_alpinejs6 = __toESM(require_module_cjs());
+  var import_alpinejs7 = __toESM(require_module_cjs());
+  function getAlpineScopeKeys(el) {
+    let keys = [];
+    let currentEl = el;
+    while (currentEl) {
+      if (currentEl._x_dataStack && currentEl._x_dataStack.length > 0) {
+        let ownScope = currentEl._x_dataStack[0];
+        for (let key of Object.keys(ownScope)) {
+          if (!keys.includes(key) && !key.startsWith("$"))
+            keys.push(key);
+        }
+      }
+      if (currentEl.hasAttribute && currentEl.hasAttribute("wire:id"))
+        break;
+      currentEl = currentEl.parentElement;
+    }
+    return keys;
+  }
   function evaluateExpression(el, expression, options = {}) {
     if (!expression || expression.trim() === "")
       return;
-    let result = import_alpinejs6.default.evaluateRaw(el, expression, options);
+    let result = import_alpinejs7.default.evaluateRaw(el, expression, options);
     if (result instanceof Promise) {
       result.catch(() => {
       });
@@ -14750,9 +14830,9 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   function evaluateActionExpression(el, expression, options = {}) {
     if (!expression || expression.trim() === "")
       return;
-    let contextualExpression = contextualizeExpression(expression);
+    let contextualExpression = contextualizeExpression(expression, el);
     try {
-      let result = import_alpinejs6.default.evaluateRaw(el, contextualExpression, options);
+      let result = import_alpinejs7.default.evaluateRaw(el, contextualExpression, options);
       if (result instanceof Promise && result._livewireAction) {
         result.catch(() => {
         });
@@ -14765,8 +14845,11 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       console.error(error2);
     }
   }
-  function contextualizeExpression(expression) {
+  function contextualizeExpression(expression, el) {
     let SKIP = ["JSON", "true", "false", "null", "undefined", "this", "$wire", "$event"];
+    if (el) {
+      SKIP.push(...getAlpineScopeKeys(el));
+    }
     let strings = [];
     let result = expression.replace(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g, (m) => {
       strings.push(m);
@@ -14811,7 +14894,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         onlyIfScriptHasntBeenRunAlreadyForThisComponent(component, key, () => {
           let scriptContent = extractScriptTagContent(content);
           scriptContent = scriptContent.includes("await") ? `(async()=>{ ${scriptContent} })()` : `(()=>{ ${scriptContent} })()`;
-          import_alpinejs7.default.dontAutoEvaluateFunctions(() => {
+          import_alpinejs8.default.dontAutoEvaluateFunctions(() => {
             evaluateExpression(component.el, scriptContent, {
               context: component.$wire,
               scope: {
@@ -14850,6 +14933,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     await callback();
   }
   async function addAssetsToHeadTagOfPage(rawHtml) {
+    rawHtml = replaceNoncesInHtml(rawHtml);
     let newDocument = new DOMParser().parseFromString(rawHtml, "text/html");
     let newHead = document.adoptNode(newDocument.head);
     for (let child of newHead.children) {
@@ -14862,7 +14946,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   async function runAssetSynchronously(child) {
     return new Promise((resolve, reject) => {
       if (isScript2(child)) {
-        let script = cloneScriptTag2(child);
+        let script = cloneScriptTag(child);
         if (script.src) {
           script.onload = () => resolve();
           script.onerror = () => reject();
@@ -14879,19 +14963,10 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   function isScript2(el) {
     return el.tagName.toLowerCase() === "script";
   }
-  function cloneScriptTag2(el) {
-    let script = document.createElement("script");
-    script.textContent = el.textContent;
-    script.async = el.async;
-    for (let attr of el.attributes) {
-      script.setAttribute(attr.name, attr.value);
-    }
-    return script;
-  }
 
   // js/features/supportJsEvaluation.js
-  var import_alpinejs8 = __toESM(require_module_cjs());
-  import_alpinejs8.default.magic("js", (el) => {
+  var import_alpinejs9 = __toESM(require_module_cjs());
+  import_alpinejs9.default.magic("js", (el) => {
     let component = findComponentByEl(el);
     return component.$wire.js;
   });
@@ -14914,7 +14989,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/morph.js
-  var import_alpinejs9 = __toESM(require_module_cjs());
+  var import_alpinejs10 = __toESM(require_module_cjs());
 
   // js/directives/wire-transition.js
   var defaultName = "match-element";
@@ -15003,9 +15078,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
 
   // js/morph.js
   async function morph2(component, el, html) {
-    let wrapperTag = el.parentElement ? el.parentElement.tagName.toLowerCase() : "div";
-    let customElement = customElements.get(wrapperTag);
-    wrapperTag = customElement ? customElement.name : wrapperTag;
+    let wrapperTag = getTagName(el.parentElement);
     let wrapper = document.createElement(wrapperTag);
     wrapper.innerHTML = html;
     let parentComponent;
@@ -15036,18 +15109,18 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     });
     let transitionOptions = component.effects.transition || {};
     await transitionDomMutation(el, to, () => {
-      import_alpinejs9.default.morph(el, to, getMorphConfig(component));
+      import_alpinejs10.default.morph(el, to, getMorphConfig(component));
     }, transitionOptions);
     trigger("morphed", { el, component });
   }
   async function morphFragment(component, startNode, endNode, toHTML) {
     let fromContainer = startNode.parentElement;
-    let fromContainerTag = fromContainer ? fromContainer.tagName.toLowerCase() : "div";
+    let fromContainerTag = getTagName(fromContainer);
     let toContainer = document.createElement(fromContainerTag);
     toContainer.innerHTML = toHTML;
     toContainer.__livewire = component;
     let parentElement = component.el.parentElement;
-    let parentElementTag = parentElement ? parentElement.tagName.toLowerCase() : "div";
+    let parentElementTag = getTagName(parentElement);
     let parentComponent;
     try {
       parentComponent = parentElement ? findComponentByEl(parentElement) : null;
@@ -15071,7 +15144,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     }
     let fromEl = islandHasTransition ? fromContainer : document.createElement("div");
     await transitionDomMutation(fromEl, toContainer, () => {
-      import_alpinejs9.default.morphBetween(startNode, endNode, toContainer, getMorphConfig(component));
+      import_alpinejs10.default.morphBetween(startNode, endNode, toContainer, getMorphConfig(component));
     }, transitionOptions);
     trigger("island.morphed", { startNode, endNode, component });
   }
@@ -15148,6 +15221,11 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   function isComponentRootEl(el) {
     return el.hasAttribute("wire:id");
   }
+  function getTagName(el) {
+    let tag = el ? el.tagName.toLowerCase() : "div";
+    let customElement = customElements.get(tag);
+    return customElement ? customElement.name : tag;
+  }
 
   // js/features/supportMorphDom.js
   interceptMessage(({ message, onSuccess }) => {
@@ -15187,7 +15265,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/features/supportDisablingFormsDuringRequest.js
-  var import_alpinejs10 = __toESM(require_module_cjs());
+  var import_alpinejs11 = __toESM(require_module_cjs());
   var cleanups = new Bag();
   on("directive.init", ({ el, directive: directive2, cleanup, component }) => setTimeout(() => {
     if (directive2.value !== "submit")
@@ -15206,7 +15284,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
   function disableForm(formEl) {
     let undos = [];
-    import_alpinejs10.default.walk(formEl, (el, skip) => {
+    import_alpinejs11.default.walk(formEl, (el, skip) => {
       if (!formEl.contains(el))
         return;
       if (el.hasAttribute("wire:ignore"))
@@ -15299,7 +15377,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/features/supportQueryString.js
-  var import_alpinejs11 = __toESM(require_module_cjs());
+  var import_alpinejs12 = __toESM(require_module_cjs());
   on("effect", ({ component, effects, cleanup }) => {
     let queryString = effects["url"];
     if (!queryString)
@@ -15311,11 +15389,12 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       let initialValue = [false, null, void 0].includes(except) ? dataGet(component.ephemeral, name) : except;
       let { replace: replace2, push: push2, pop } = track(as, initialValue, alwaysShow, except);
       if (use === "replace") {
-        let effectReference = import_alpinejs11.default.effect(() => {
+        let effectReference = import_alpinejs12.default.effect(() => {
           replace2(dataGet(component.reactive, name));
         });
-        cleanup(() => import_alpinejs11.default.release(effectReference));
+        cleanup(() => import_alpinejs12.default.release(effectReference));
       } else if (use === "push") {
+        let popNavigating = false;
         let forgetCommitHandler = on("commit", ({ component: commitComponent, succeed }) => {
           if (component !== commitComponent)
             return;
@@ -15324,15 +15403,25 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
             let afterValue = dataGet(component.canonical, name);
             if (JSON.stringify(beforeValue) === JSON.stringify(afterValue))
               return;
-            push2(afterValue);
+            if (popNavigating) {
+              replace2(afterValue);
+            } else {
+              push2(afterValue);
+            }
           });
         });
         let forgetPopHandler = pop(async (newValue) => {
+          popNavigating = true;
           await component.$wire.set(name, newValue);
           document.querySelectorAll("input").forEach((el) => {
             el._x_forceModelUpdate && el._x_forceModelUpdate(el._x_model.get());
           });
+          requestAnimationFrame(() => popNavigating = false);
         });
+        let currentValue = dataGet(component.ephemeral, name);
+        if (JSON.stringify(currentValue) !== JSON.stringify(initialValue)) {
+          replace2(currentValue);
+        }
         cleanup(() => {
           forgetCommitHandler();
           forgetPopHandler();
@@ -15555,8 +15644,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
       return;
     let incomingMetadata = extractFragmentMetadataFromHtml(islandHtml);
     let strippedContent = extractInnerHtmlFromFragmentHtml(islandHtml);
-    let parentElement = fragment.startMarkerNode.parentElement;
-    let parentElementTag = parentElement ? parentElement.tagName.toLowerCase() : "div";
+    let parentElementTag = getTagName(fragment.startMarkerNode.parentElement);
     let mode = incomingMetadata.mode || "morph";
     if (mode === "morph") {
       await morphFragment(component, fragment.startMarkerNode, fragment.endMarkerNode, strippedContent);
@@ -15613,8 +15701,8 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/directives/wire-current.js
-  var import_alpinejs12 = __toESM(require_module_cjs());
-  import_alpinejs12.default.addInitSelector(() => `[wire\\:current]`);
+  var import_alpinejs13 = __toESM(require_module_cjs());
+  import_alpinejs13.default.addInitSelector(() => `[wire\\:current]`);
   var onPageChanges = /* @__PURE__ */ new Map();
   document.addEventListener("livewire:navigated", () => {
     onPageChanges.forEach((i) => i(new URL(window.location.href)));
@@ -15666,7 +15754,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/directives/wire-navigate.js
-  var import_alpinejs13 = __toESM(require_module_cjs());
+  var import_alpinejs14 = __toESM(require_module_cjs());
   var wireNavigateSelectors = [
     "[wire\\:navigate]",
     "[wire\\:navigate\\.hover]",
@@ -15683,13 +15771,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     "wire:navigate.hover.preserve-scroll": "x-navigate.hover.preserve-scroll"
   };
   wireNavigateSelectors.forEach((selector) => {
-    import_alpinejs13.default.addInitSelector(() => selector);
+    import_alpinejs14.default.addInitSelector(() => selector);
   });
-  import_alpinejs13.default.interceptInit(
-    import_alpinejs13.default.skipDuringClone((el) => {
+  import_alpinejs14.default.interceptInit(
+    import_alpinejs14.default.skipDuringClone((el) => {
       for (let [wireAttr, alpineDirective] of Object.entries(attributeMap)) {
         if (el.hasAttribute(wireAttr)) {
-          import_alpinejs13.default.bind(el, { [alpineDirective]: true });
+          import_alpinejs14.default.bind(el, { [alpineDirective]: true });
           break;
         }
       }
@@ -15758,18 +15846,20 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/features/supportWireIntersect.js
-  var import_alpinejs14 = __toESM(require_module_cjs());
-  import_alpinejs14.default.interceptInit((el) => {
+  var import_alpinejs15 = __toESM(require_module_cjs());
+  import_alpinejs15.default.interceptInit((el) => {
     for (let i = 0; i < el.attributes.length; i++) {
       if (el.attributes[i].name.startsWith("wire:intersect")) {
         let { name, value } = el.attributes[i];
         let directive2 = extractDirective(el, name);
         let modifierString = name.split("wire:intersect")[1];
         let expression = value.trim();
-        import_alpinejs14.default.bind(el, {
+        import_alpinejs15.default.bind(el, {
           ["x-intersect" + modifierString](e) {
             directive2.eventContext = e;
-            let component = el.closest("[wire\\:id]")?.__livewire;
+            let component = findComponentByEl(el, false);
+            if (!component)
+              return;
             component.addActionContext({
               el,
               directive: directive2
@@ -15782,14 +15872,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/features/supportWireSort.js
-  var import_alpinejs15 = __toESM(require_module_cjs());
-  import_alpinejs15.default.interceptInit((el) => {
+  var import_alpinejs16 = __toESM(require_module_cjs());
+  import_alpinejs16.default.interceptInit((el) => {
     for (let i = 0; i < el.attributes.length; i++) {
       if (el.attributes[i].name.startsWith("wire:sort:item")) {
         let directive2 = extractDirective(el, el.attributes[i].name);
         let modifierString = directive2.modifiers.join(".");
         let expression = directive2.expression;
-        import_alpinejs15.default.bind(el, {
+        import_alpinejs16.default.bind(el, {
           ["x-sort:item" + modifierString]() {
             return expression;
           }
@@ -15814,7 +15904,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
           attribute = attribute.replace(".append", "");
         }
         let expression = directive2.expression;
-        import_alpinejs15.default.bind(el, {
+        import_alpinejs16.default.bind(el, {
           [attribute]() {
             setNextActionOrigin({ el, directive: directive2 });
             let params = [this.$item, this.$position];
@@ -15873,7 +15963,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/directives/wire-wildcard.js
-  var import_alpinejs16 = __toESM(require_module_cjs());
+  var import_alpinejs17 = __toESM(require_module_cjs());
   on("directive.init", ({ el, directive: directive2, cleanup, component }) => {
     if (["snapshot", "effects", "model", "init", "loading", "poll", "ignore", "id", "data", "key", "target", "dirty", "sort"].includes(directive2.value))
       return;
@@ -15895,7 +15985,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     if (directive2.modifiers.includes("append")) {
       attribute = attribute.replace(".append", "");
     }
-    let cleanupBinding = import_alpinejs16.default.bind(el, {
+    let cleanupBinding = import_alpinejs17.default.bind(el, {
       [attribute](e) {
         directive2.eventContext = e;
         directive2.wire = component.$wire;
@@ -16167,15 +16257,15 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/directives/wire-cloak.js
-  var import_alpinejs17 = __toESM(require_module_cjs());
-  import_alpinejs17.default.interceptInit((el) => {
+  var import_alpinejs18 = __toESM(require_module_cjs());
+  import_alpinejs18.default.interceptInit((el) => {
     if (el.hasAttribute("wire:cloak")) {
-      import_alpinejs17.default.mutateDom(() => el.removeAttribute("wire:cloak"));
+      import_alpinejs18.default.mutateDom(() => el.removeAttribute("wire:cloak"));
     }
   });
 
   // js/directives/wire-model.js
-  var import_alpinejs18 = __toESM(require_module_cjs());
+  var import_alpinejs19 = __toESM(require_module_cjs());
   directive("model", ({ el, directive: directive2, component, cleanup }) => {
     component = findComponentByEl(el);
     let { expression, modifiers } = directive2;
@@ -16251,7 +16341,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
         }
       };
     };
-    import_alpinejs18.default.bind(el, bindings);
+    import_alpinejs19.default.bind(el, bindings);
   });
   function getModifierTail(modifiers) {
     modifiers = modifiers.filter((i) => ![
@@ -16431,14 +16521,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   }
 
   // js/directives/wire-show.js
-  var import_alpinejs19 = __toESM(require_module_cjs());
-  import_alpinejs19.default.interceptInit((el) => {
+  var import_alpinejs20 = __toESM(require_module_cjs());
+  import_alpinejs20.default.interceptInit((el) => {
     for (let i = 0; i < el.attributes.length; i++) {
       if (el.attributes[i].name.startsWith("wire:show")) {
         let { name, value } = el.attributes[i];
         let modifierString = name.split("wire:show")[1];
         let expression = value.trim();
-        import_alpinejs19.default.bind(el, {
+        import_alpinejs20.default.bind(el, {
           ["x-show" + modifierString]() {
             return evaluateActionExpression(el, expression);
           }
@@ -16448,14 +16538,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/directives/wire-text.js
-  var import_alpinejs20 = __toESM(require_module_cjs());
-  import_alpinejs20.default.interceptInit((el) => {
+  var import_alpinejs21 = __toESM(require_module_cjs());
+  import_alpinejs21.default.interceptInit((el) => {
     for (let i = 0; i < el.attributes.length; i++) {
       if (el.attributes[i].name.startsWith("wire:text")) {
         let { name, value } = el.attributes[i];
         let modifierString = name.split("wire:text")[1];
         let expression = value.trim();
-        import_alpinejs20.default.bind(el, {
+        import_alpinejs21.default.bind(el, {
           ["x-text" + modifierString]() {
             return evaluateActionExpression(el, expression);
           }
@@ -16465,14 +16555,14 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   });
 
   // js/directives/wire-bind.js
-  var import_alpinejs21 = __toESM(require_module_cjs());
-  import_alpinejs21.default.interceptInit((el) => {
+  var import_alpinejs22 = __toESM(require_module_cjs());
+  import_alpinejs22.default.interceptInit((el) => {
     for (let i = 0; i < el.attributes.length; i++) {
       if (el.attributes[i].name.startsWith("wire:bind:")) {
         let { name, value } = el.attributes[i];
         let remainder = name.split("wire:bind")[1];
         let expression = value.trim();
-        import_alpinejs21.default.bind(el, {
+        import_alpinejs22.default.bind(el, {
           ["x-bind" + remainder]() {
             return evaluateActionExpression(el, expression);
           }
@@ -16500,7 +16590,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
     dispatch: dispatchGlobal,
     on: on2,
     get navigate() {
-      return import_alpinejs22.default.navigate;
+      return import_alpinejs23.default.navigate;
     }
   };
   var warnAboutMultipleInstancesOf = (entity) => console.warn(`Detected multiple instances of ${entity} running`);
@@ -16509,7 +16599,7 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   if (window.Alpine)
     warnAboutMultipleInstancesOf("Alpine");
   window.Livewire = Livewire2;
-  window.Alpine = import_alpinejs22.default;
+  window.Alpine = import_alpinejs23.default;
   if (window.livewireScriptConfig === void 0) {
     window.Alpine.__fromLivewire = true;
     document.addEventListener("DOMContentLoaded", () => {
