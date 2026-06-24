@@ -3,12 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Filament\App\Pages\Auth\Login;
-use App\Filament\App\Pages\TeamInvitationAccept;
-use App\Filament\App\Pages\Tenancy\EditTeamProfile;
-use App\Filament\App\Pages\Tenancy\RegisterTeam;
-use App\Http\Middleware\ApplyTenantScopes;
-use App\Http\Middleware\CurrentTenant;
-use App\Models\Team;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
@@ -28,6 +22,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use JeffersonGoncalves\Filament\Pwa\FilamentPwaPlugin;
+use JeffersonGoncalves\Filament\Teams\FilamentTeamsPlugin;
+use JeffersonGoncalves\Filament\Teams\Pages\TeamInvitationAccept;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 
@@ -43,7 +40,7 @@ class AppPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Green,
             ])
-            ->brandLogo(fn () => Vite::asset(config('teamkit.favicon.logo')))
+            ->brandLogo(fn () => Vite::asset(config('teamkit.logo')))
             ->brandLogoHeight(fn () => request()->is('app/login', 'app/password-reset/*') ? '121px' : '50px')
             ->viteTheme('resources/css/filament/app/theme.css')
             ->defaultThemeMode(config('teamkit.theme_mode', ThemeMode::Dark))
@@ -73,6 +70,8 @@ class AppPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
+                FilamentPwaPlugin::make(),
+                FilamentTeamsPlugin::make(),
                 FilamentEditProfilePlugin::make()
                     ->slug('profile')
                     ->setTitle(__('My Profile'))
@@ -107,14 +106,6 @@ class AppPanelProvider extends PanelProvider
             ->unsavedChangesAlerts()
             ->passwordReset()
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
-            ->tenant(Team::class)
-            ->tenantRoutePrefix('team')
-            ->tenantRegistration(RegisterTeam::class)
-            ->tenantProfile(EditTeamProfile::class)
-            ->tenantMiddleware([
-                ApplyTenantScopes::class,
-                CurrentTenant::class,
-            ], isPersistent: true);
+            ->databaseNotificationsPolling('30s');
     }
 }

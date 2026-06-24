@@ -2,7 +2,6 @@
 
 namespace App\Observers;
 
-use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Psr\SimpleCache\InvalidArgumentException;
@@ -14,11 +13,6 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        $user->ownedTeams()->save(Team::forceCreate([
-            'user_id' => $user->id,
-            'name' => explode(' ', $user->name, 2)[0]."'s Team",
-            'personal_team' => true,
-        ]));
         try {
             Cache::delete('users_count');
         } catch (InvalidArgumentException) {

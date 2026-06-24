@@ -16,22 +16,25 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use JeffersonGoncalves\Filament\Teams\Concerns\HasTeams;
+use JeffersonGoncalves\Filament\Teams\Models\Membership;
+use JeffersonGoncalves\Filament\Teams\Models\Team;
 
 /**
  * @property int $id
  * @property bool $status
  * @property string $name
  * @property string $email
- * @property \Illuminate\Support\Carbon|null $email_verified_at
+ * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
  * @property string|null $avatar_url
@@ -39,15 +42,15 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $locale
  * @property string|null $theme_color
  * @property int|null $current_team_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Team|null $currentTeam
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Team|null $currentTeam
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $ownedTeams
+ * @property-read Collection<int, Team> $ownedTeams
  * @property-read int|null $owned_teams_count
- * @property-read \App\Models\Membership|null $membership
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
+ * @property-read Membership|null $membership
+ * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
  *
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
@@ -78,6 +81,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     use Authorizable;
     use CanResetPassword;
     use HasFactory;
+    use HasTeams;
     use MustVerifyEmail;
     use Notifiable;
 
@@ -120,76 +124,6 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         $avatarColumn = config('filament-edit-profile.avatar_column', 'avatar_url');
 
         return $this->$avatarColumn ? Storage::url($this->$avatarColumn) : null;
-    }
-
-    public function currentTeam(): BelongsTo
-    {
-        if (is_null($this->current_team_id) && $this->id) {
-            $this->switchTeam($this->personalTeam());
-        }
-
-        return $this->belongsTo(Team::class, 'current_team_id');
-    }
-
-    public function switchTeam($team): bool
-    {
-        if (! $this->belongsToTeam($team)) {
-            return false;
-        }
-
-        $this->forceFill([
-            'current_team_id' => $team->id,
-        ])->save();
-
-        $this->setRelation('currentTeam', $team);
-
-        return true;
-    }
-
-    public function belongsToTeam($team): bool
-    {
-        return $this->ownsTeam($team) || $this->teams->contains(fn ($t) => $t->id === $team->id);
-    }
-
-    public function ownsTeam($team): bool
-    {
-        if (is_null($team)) {
-            return false;
-        }
-
-        return $this->id == $team->user_id;
-    }
-
-    public function personalTeam(): ?Team
-    {
-        return $this->ownedTeams->where('personal_team', true)->first();
-    }
-
-    public function canAccessTenant(Model $tenant): bool
-    {
-        return $this->belongsToTeam($tenant);
-    }
-
-    public function getTenants(Panel $panel): array|Collection
-    {
-        return $this->ownedTeams->merge($this->teams)->sortBy('name');
-    }
-
-    public function ownedTeams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
-
-    public function teams(): BelongsToMany
-    {
-        return $this->belongsToMany(Team::class, Membership::class)
-            ->withTimestamps()
-            ->as('membership');
-    }
-
-    public function getDefaultTenant(Panel $panel): ?Model
-    {
-        return $this->currentTeam;
     }
 
     protected function casts(): array
