@@ -85,6 +85,10 @@ Run migrations
 ``` bash
 php artisan migrate
 ```
+Build frontend assets
+``` bash
+pnpm run build
+```
 Run the server
 ``` bash
 php artisan serve
