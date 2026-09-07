@@ -2580,21 +2580,21 @@
         },
         {
             "name": "jeffersongoncalves/filament-teams",
-            "version": "3.1.0",
+            "version": "3.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jeffersongoncalves/filament-teams.git",
-                "reference": "fc1fee5b7ce96d4352bc0e31a38a3847a22acdc1"
+                "reference": "14e0ef286fca0282da786d2f68b776091f7ac813"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jeffersongoncalves/filament-teams/zipball/fc1fee5b7ce96d4352bc0e31a38a3847a22acdc1",
-                "reference": "fc1fee5b7ce96d4352bc0e31a38a3847a22acdc1",
+                "url": "https://api.github.com/repos/jeffersongoncalves/filament-teams/zipball/14e0ef286fca0282da786d2f68b776091f7ac813",
+                "reference": "14e0ef286fca0282da786d2f68b776091f7ac813",
                 "shasum": ""
             },
             "require": {
                 "filament/filament": "^5.0",
-                "jeffersongoncalves/laravel-teams": "^1.0",
+                "jeffersongoncalves/laravel-teams": "^2.0",
                 "php": "^8.3",
                 "spatie/laravel-package-tools": "^1.14.0"
             },
@@ -2642,7 +2642,7 @@
             ],
             "support": {
                 "issues": "https://github.com/jeffersongoncalves/filament-teams/issues",
-                "source": "https://github.com/jeffersongoncalves/filament-teams/tree/3.1.0"
+                "source": "https://github.com/jeffersongoncalves/filament-teams/tree/3.1.1"
             },
             "funding": [
                 {
@@ -2654,7 +2654,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-09-07T00:21:15+00:00"
+            "time": "2026-09-07T03:05:34+00:00"
         },
         {
             "name": "jeffersongoncalves/laravel-favicon",
@@ -2798,27 +2798,27 @@
         },
         {
             "name": "jeffersongoncalves/laravel-teams",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/jeffersongoncalves/laravel-teams.git",
-                "reference": "58fe5412fd0c2bf5cccb202f9d617d208825b4b3"
+                "reference": "ed1dfc5d58ee60a805af874057620c5b61bc2c95"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/jeffersongoncalves/laravel-teams/zipball/58fe5412fd0c2bf5cccb202f9d617d208825b4b3",
-                "reference": "58fe5412fd0c2bf5cccb202f9d617d208825b4b3",
+                "url": "https://api.github.com/repos/jeffersongoncalves/laravel-teams/zipball/ed1dfc5d58ee60a805af874057620c5b61bc2c95",
+                "reference": "ed1dfc5d58ee60a805af874057620c5b61bc2c95",
                 "shasum": ""
             },
             "require": {
-                "laravel/framework": "^11.0|^12.0|^13.0",
+                "laravel/framework": "^12.61.1|^13.12.0",
                 "php": "^8.2",
                 "spatie/laravel-package-tools": "^1.14.0"
             },
             "require-dev": {
                 "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.24",
-                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "orchestra/testbench": "^10.0|^11.0",
                 "pestphp/pest": "^3.7.4|^4.0",
                 "pestphp/pest-plugin-laravel": "^3.0|^4.0"
             },
@@ -2860,7 +2860,7 @@
             ],
             "support": {
                 "issues": "https://github.com/jeffersongoncalves/laravel-teams/issues",
-                "source": "https://github.com/jeffersongoncalves/laravel-teams/tree/1.0.0"
+                "source": "https://github.com/jeffersongoncalves/laravel-teams/tree/2.0.0"
             },
             "funding": [
                 {
@@ -2868,7 +2868,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-24T11:41:59+00:00"
+            "time": "2026-08-01T22:09:47+00:00"
         },
         {
             "name": "jenssegers/agent",
