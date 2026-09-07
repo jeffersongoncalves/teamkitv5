@@ -1,10 +1,10 @@
 <?php
 
-use JeffersonGoncalves\Filament\Teams\Models\Membership;
-use JeffersonGoncalves\Filament\Teams\Models\Team;
-use JeffersonGoncalves\Filament\Teams\Models\TeamInvitation;
+use JeffersonGoncalves\Teams\Models\Membership;
+use JeffersonGoncalves\Teams\Models\Team;
+use JeffersonGoncalves\Teams\Models\TeamInvitation;
 
-// config for JeffersonGoncalves/Filament/Teams
+// config for JeffersonGoncalves/Teams
 
 return [
 
@@ -13,8 +13,7 @@ return [
     | Authentication Guard
     |--------------------------------------------------------------------------
     |
-    | The guard used to resolve the currently authenticated user across the
-    | tenancy pages and middleware shipped with this plugin.
+    | The guard used to resolve the currently authenticated user.
     |
     */
 
@@ -26,7 +25,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The Eloquent model that represents your application users. It must use
-    | the JeffersonGoncalves\Filament\Teams\Concerns\HasTeams trait.
+    | the JeffersonGoncalves\Teams\Concerns\HasTeams trait.
     |
     */
 
