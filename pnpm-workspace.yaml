@@ -1,2 +1,8 @@
 onlyBuiltDependencies:
   - esbuild
+
+overrides:
+  rollup: '>=4.59.0'
+  yaml: '>=2.8.3'
+  picomatch: '>=2.3.2'
+  browserslist: '>=4.28.7'
