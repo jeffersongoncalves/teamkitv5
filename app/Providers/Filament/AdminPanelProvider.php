@@ -3,7 +3,7 @@
 namespace App\Providers\Filament;
 
 use AchyutN\FilamentLogViewer\FilamentLogViewer;
-use App\Filament\Admin\Pages\Auth\Login;
+use App\Filament\Admin\Resources\Users\UserResource;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
@@ -22,8 +22,11 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use JeffersonGoncalves\Filament\Admin\AdminPlugin;
+use JeffersonGoncalves\Filament\Admin\Pages\Auth\Login;
 use JeffersonGoncalves\Filament\Pwa\FilamentPwaPlugin;
 use JeffersonGoncalves\Filament\Teams\FilamentTeamsPlugin;
+use JeffersonGoncalves\Filament\User\UserPlugin;
 use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 
@@ -75,6 +78,9 @@ class AdminPanelProvider extends PanelProvider
                 __('Settings'),
             ])
             ->plugins([
+                AdminPlugin::make(),
+                UserPlugin::make()
+                    ->resource(UserResource::class),
                 FilamentPwaPlugin::make(),
                 FilamentTeamsPlugin::make()
                     ->tenancy(false)
