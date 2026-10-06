@@ -4,6 +4,7 @@ overrides:
   picomatch: '>=2.3.2'
   browserslist: '>=4.28.7'
   shell-quote: '>=1.11.0'
+  source-map-js: '>=1.2.2'
 
 allowBuilds:
   esbuild: true
