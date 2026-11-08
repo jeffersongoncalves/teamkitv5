@@ -23,7 +23,7 @@
         "jeffersongoncalves/filament-admin": "^3.0",
         "jeffersongoncalves/filament-logo": "^3.0",
         "jeffersongoncalves/filament-pwa": "^3.0",
-        "jeffersongoncalves/filament-security-headers": "3.0",
+        "jeffersongoncalves/filament-security-headers": "3.0.1",
         "jeffersongoncalves/filament-sensible-defaults": "^3.0",
         "jeffersongoncalves/filament-teams": "^3.0",
         "jeffersongoncalves/filament-user": "^3.0",
